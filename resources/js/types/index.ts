@@ -69,4 +69,30 @@ export interface Invitation {
     created_at: string;
 }
 
+export type ProjectStatus = 'active' | 'on_hold' | 'archived';
+
+export interface ProjectMember {
+    id: number;
+    user_id: number;
+    name: string;
+    email: string;
+    role: UserRole;
+    role_label: string;
+}
+
+export interface Project {
+    id: number;
+    name: string;
+    description: string | null;
+    status: ProjectStatus;
+    status_label: string;
+    status_color: string;
+    owner: string;
+    start_date: string | null;
+    target_date: string | null;
+    created_at: string;
+    members_count?: number;
+    members?: ProjectMember[];
+}
+
 export type BreadcrumbItemType = BreadcrumbItem;
