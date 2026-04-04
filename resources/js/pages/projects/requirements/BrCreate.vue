@@ -2,6 +2,7 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem, type SelectOption } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
 
 const props = defineProps<{
     project: { id: number; name: string };
@@ -25,14 +26,14 @@ const form = useForm({
     tags: [] as string[],
 });
 
-const tagInput = $ref('');
+const tagInput = ref('');
 
 function addTag() {
-    const tag = tagInput.trim();
+    const tag = tagInput.value.trim();
     if (tag && !form.tags.includes(tag)) {
         form.tags.push(tag);
     }
-    tagInput = '';
+    tagInput.value = '';
 }
 
 function removeTag(tag: string) {
