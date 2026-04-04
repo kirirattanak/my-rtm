@@ -65,7 +65,7 @@ const statusClass: Record<string, string> = {
                     <div class="w-48">
                         <label class="block text-xs font-medium text-slate-600 mb-1">Role</label>
                         <select v-model="form.role"
-                            class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/50">
                             <option v-for="r in roles" :key="r.value" :value="r.value">{{ r.label }}</option>
                         </select>
                     </div>

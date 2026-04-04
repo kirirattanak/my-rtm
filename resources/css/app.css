@@ -114,4 +114,11 @@ html {
     body {
         @apply bg-background text-foreground;
     }
+
+    select,
+    input,
+    textarea {
+        @apply bg-white text-slate-800;
+        color-scheme: light;
+    }
 }

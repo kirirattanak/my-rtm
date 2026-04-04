@@ -78,7 +78,7 @@ const roleBadgeClass: Record<UserRole, string> = {
                             <td class="px-4 py-3">
                                 <div v-if="editingRole === user.id" class="flex items-center gap-2">
                                     <select v-model="roleForm.role"
-                                        class="border border-slate-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-primary/50">
+                                        class="border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/50">
                                         <option v-for="r in roles" :key="r.value" :value="r.value">{{ r.label }}</option>
                                     </select>
                                     <button @click="saveRole(user)"
