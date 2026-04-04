@@ -71,7 +71,7 @@ function unlinkTr(trId: number) {
     <Head :title="br.ref" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="p-6 space-y-6 max-w-4xl">
+        <div class="p-6 space-y-6 max-w-4xl stagger">
             <!-- Header -->
             <div class="flex items-start justify-between">
                 <div class="space-y-2">

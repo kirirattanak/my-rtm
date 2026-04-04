@@ -57,7 +57,7 @@ const typeClass: Record<string, string> = {
             </div>
 
             <!-- Table -->
-            <div v-else class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div v-else class="bg-white rounded-xl border border-slate-200 overflow-hidden animate-in">
                 <table class="w-full text-sm">
                     <thead class="bg-slate-50 border-b border-slate-200">
                         <tr>

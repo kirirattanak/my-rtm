@@ -21,6 +21,7 @@ export interface SharedData {
     quote: { message: string; author: string };
     auth: Auth;
     currentProject: { id: number; name: string } | null;
+    flash: { success: string | null; error: string | null };
     ziggy: {
         location: string;
         url: string;

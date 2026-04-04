@@ -46,7 +46,7 @@ const statusClasses: Record<string, string> = {
             </div>
 
             <!-- Project cards -->
-            <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 stagger">
                 <Link v-for="project in projects" :key="project.id"
                     :href="route('projects.show', project.id)"
                     class="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition-shadow block">

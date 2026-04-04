@@ -39,7 +39,7 @@ function confirmDelete() {
     <Head :title="project.name" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="p-6 space-y-6">
+        <div class="p-6 space-y-6 stagger">
             <!-- Header -->
             <div class="flex items-start justify-between">
                 <div class="flex items-center gap-4">
