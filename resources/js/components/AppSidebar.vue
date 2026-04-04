@@ -3,31 +3,24 @@ import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid } from 'lucide-vue-next';
+import { type NavItem, type SharedData } from '@/types';
+import { Link, usePage } from '@inertiajs/vue3';
+import { LayoutGrid, Mail, Users } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
+const page = usePage<SharedData>();
+const isAdmin = page.props.auth.user.role === 'admin';
+
 const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: '/dashboard',
-        icon: LayoutGrid,
-    },
+    { title: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
 ];
 
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Github Repo',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: Folder,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits',
-        icon: BookOpen,
-    },
+const adminNavItems: NavItem[] = [
+    { title: 'Users', href: '/admin/users', icon: Users },
+    { title: 'Invitations', href: '/admin/invitations', icon: Mail },
 ];
+
+const footerNavItems: NavItem[] = [];
 </script>
 
 <template>
@@ -46,6 +39,7 @@ const footerNavItems: NavItem[] = [
 
         <SidebarContent>
             <NavMain :items="mainNavItems" />
+            <NavMain v-if="isAdmin" :items="adminNavItems" label="Admin" />
         </SidebarContent>
 
         <SidebarFooter>
