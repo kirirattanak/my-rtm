@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Invitation;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -15,32 +16,59 @@ use Inertia\Response;
 
 class RegisteredUserController extends Controller
 {
-    /**
-     * Show the registration page.
-     */
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        return Inertia::render('auth/Register');
+        $invitation = null;
+
+        if ($request->filled('invitation')) {
+            $invitation = Invitation::where('token', $request->invitation)
+                ->whereNull('accepted_at')
+                ->where('expires_at', '>', now())
+                ->first();
+        }
+
+        return Inertia::render('auth/Register', [
+            'invitation' => $invitation ? [
+                'token' => $invitation->token,
+                'email' => $invitation->email,
+                'role'  => $invitation->role->value,
+            ] : null,
+        ]);
     }
 
-    /**
-     * Handle an incoming registration request.
-     *
-     * @throws \Illuminate\Validation\ValidationException
-     */
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|string|lowercase|email|max:255|unique:'.User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        $invitation = null;
+        $role = 'viewer';
+
+        if ($request->filled('invitation_token')) {
+            $invitation = Invitation::where('token', $request->invitation_token)
+                ->where('email', $request->email)
+                ->whereNull('accepted_at')
+                ->where('expires_at', '>', now())
+                ->first();
+
+            if ($invitation) {
+                $role = $invitation->role->value;
+            }
+        }
+
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
+            'name'     => $request->name,
+            'email'    => $request->email,
             'password' => Hash::make($request->password),
+            'role'     => $role,
         ]);
+
+        if ($invitation) {
+            $invitation->update(['accepted_at' => now()]);
+        }
 
         event(new Registered($user));
 
