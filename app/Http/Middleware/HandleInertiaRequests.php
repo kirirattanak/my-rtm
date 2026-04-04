@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Project;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -38,6 +39,19 @@ class HandleInertiaRequests extends Middleware
     {
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
 
+        $projectId = $request->route('project');
+        $currentProject = null;
+
+        if ($projectId && $request->user()) {
+            $project = $projectId instanceof Project
+                ? $projectId
+                : Project::find(is_object($projectId) ? $projectId->id : $projectId);
+
+            if ($project) {
+                $currentProject = ['id' => $project->id, 'name' => $project->name];
+            }
+        }
+
         return array_merge(parent::share($request), [
             ...parent::share($request),
             'name' => config('app.name'),
@@ -45,6 +59,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'currentProject' => $currentProject,
         ]);
     }
 }

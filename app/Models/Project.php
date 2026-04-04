@@ -61,4 +61,14 @@ class Project extends Model
             ->where('user_id', $user->id)
             ->exists();
     }
+
+    public function businessRequirements(): HasMany
+    {
+        return $this->hasMany(BusinessRequirement::class);
+    }
+
+    public function technicalRequirements(): HasMany
+    {
+        return $this->hasMany(TechnicalRequirement::class);
+    }
 }

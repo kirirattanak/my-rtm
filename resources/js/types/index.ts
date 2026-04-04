@@ -20,6 +20,7 @@ export interface SharedData {
     name: string;
     quote: { message: string; author: string };
     auth: Auth;
+    currentProject: { id: number; name: string } | null;
     ziggy: {
         location: string;
         url: string;
@@ -93,6 +94,88 @@ export interface Project {
     created_at: string;
     members_count?: number;
     members?: ProjectMember[];
+}
+
+export type BrPriority = 'critical' | 'high' | 'medium' | 'low';
+export type TrType = 'functional' | 'non_functional' | 'constraint';
+export type RequirementStatus = 'draft' | 'review' | 'approved' | 'implemented' | 'deprecated';
+
+export interface SelectOption {
+    value: string;
+    label: string;
+}
+
+export interface Comment {
+    id: number;
+    body: string;
+    user: Pick<User, 'id' | 'name'>;
+    created_at: string;
+}
+
+export interface BrListItem {
+    id: number;
+    ref: string;
+    number: number;
+    title: string;
+    priority: BrPriority;
+    priority_label: string;
+    priority_color: string;
+    status: RequirementStatus;
+    status_label: string;
+    status_color: string;
+    category: string | null;
+    creator: Pick<User, 'id' | 'name'>;
+    tr_count: number;
+    created_at: string;
+}
+
+export interface TrListItem {
+    id: number;
+    ref: string;
+    number: number;
+    title: string;
+    type: TrType;
+    type_label: string;
+    status: RequirementStatus;
+    status_label: string;
+    status_color: string;
+    creator: Pick<User, 'id' | 'name'>;
+    br_count: number;
+    created_at: string;
+}
+
+export interface BusinessRequirement extends BrListItem {
+    description: string | null;
+    tags: string[];
+    updated_at: string;
+    technical_requirements: {
+        id: number;
+        ref: string;
+        title: string;
+        status: RequirementStatus;
+        status_label: string;
+        status_color: string;
+        type: TrType;
+        type_label: string;
+    }[];
+    comments: Comment[];
+}
+
+export interface TechnicalRequirement extends TrListItem {
+    description: string | null;
+    updated_at: string;
+    business_requirements: {
+        id: number;
+        ref: string;
+        title: string;
+        status: RequirementStatus;
+        status_label: string;
+        status_color: string;
+        priority: BrPriority;
+        priority_label: string;
+        priority_color: string;
+    }[];
+    comments: Comment[];
 }
 
 export type BreadcrumbItemType = BreadcrumbItem;
