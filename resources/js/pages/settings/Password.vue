@@ -26,7 +26,7 @@ function save() {
     <Head title="Change Password" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="p-6 max-w-xl space-y-6">
+        <div class="p-6 max-w-xl space-y-6 stagger">
             <div>
                 <h1 class="text-xl font-semibold text-slate-900">Change Password</h1>
                 <p class="text-sm text-slate-500 mt-0.5">Make sure you use a strong, unique password.</p>

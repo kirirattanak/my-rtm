@@ -32,7 +32,7 @@ function save() {
     <Head title="Profile Settings" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="p-6 max-w-xl space-y-6">
+        <div class="p-6 max-w-xl space-y-6 stagger">
             <div>
                 <h1 class="text-xl font-semibold text-slate-900">Profile</h1>
                 <p class="text-sm text-slate-500 mt-0.5">Update your name and email address.</p>

@@ -39,7 +39,7 @@ const statusClass: Record<string, string> = {
     <Head title="Invitations" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="p-6 space-y-6">
+        <div class="p-6 space-y-6 stagger">
             <div class="flex items-center justify-between">
                 <div>
                     <h1 class="text-xl font-semibold text-slate-900">Invitations</h1>

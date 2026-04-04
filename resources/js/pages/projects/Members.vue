@@ -59,7 +59,7 @@ const roleColors: Record<string, string> = {
     <Head :title="`Members · ${project.name}`" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="p-6 space-y-6 max-w-3xl">
+        <div class="p-6 space-y-6 max-w-3xl stagger">
             <div class="flex items-center justify-between">
                 <div>
                     <h1 class="text-xl font-semibold text-slate-900">Team Members</h1>

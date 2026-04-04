@@ -32,7 +32,7 @@ function submit() {
     <Head title="New Technical Requirement" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="p-6 max-w-2xl">
+        <div class="p-6 max-w-2xl animate-in">
             <h1 class="text-xl font-semibold text-slate-900 mb-6">New Technical Requirement</h1>
 
             <form @submit.prevent="submit" class="space-y-5">

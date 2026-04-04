@@ -30,7 +30,7 @@ function submit() {
     <Head title="New Project" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="p-6 max-w-2xl">
+        <div class="p-6 max-w-2xl animate-in">
             <div class="mb-6">
                 <h1 class="text-xl font-semibold text-slate-900">New Project</h1>
                 <p class="text-sm text-slate-500 mt-0.5">Fill in the details to create a new project.</p>

@@ -41,7 +41,7 @@ function submit() {
     <Head :title="`Edit ${tr.ref}`" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="p-6 max-w-2xl">
+        <div class="p-6 max-w-2xl animate-in">
             <h1 class="text-xl font-semibold text-slate-900 mb-1">Edit {{ tr.ref }}</h1>
             <p class="text-sm text-slate-500 mb-6">{{ tr.title }}</p>
 

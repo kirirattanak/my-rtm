@@ -32,7 +32,7 @@ function submit() {
     <Head :title="`Edit · ${project.name}`" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="p-6 max-w-2xl">
+        <div class="p-6 max-w-2xl animate-in">
             <div class="mb-6">
                 <h1 class="text-xl font-semibold text-slate-900">Edit Project</h1>
                 <p class="text-sm text-slate-500 mt-0.5">{{ project.name }}</p>
