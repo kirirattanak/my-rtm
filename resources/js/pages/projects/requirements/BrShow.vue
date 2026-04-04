@@ -6,6 +6,7 @@ import { Head, Link, router, useForm } from '@inertiajs/vue3';
 const props = defineProps<{
     project: { id: number; name: string };
     br: BusinessRequirement;
+    linkable_trs: { id: number; ref: string; title: string }[];
     can: { edit: boolean; delete: boolean };
 }>();
 
@@ -32,6 +33,14 @@ const statusClass: Record<string, string> = {
 };
 
 const trStatusClass: Record<string, string> = statusClass;
+
+const linkForm = useForm({ technical_requirement_id: '' });
+
+function linkTr() {
+    linkForm.post(route('projects.requirements.business.tr-links.store', [props.project.id, props.br.id]), {
+        onSuccess: () => linkForm.reset(),
+    });
+}
 
 const commentForm = useForm({ body: '' });
 
@@ -117,15 +126,29 @@ function unlinkTr(trId: number) {
 
             <!-- Linked TRs -->
             <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
-                    <h2 class="text-sm font-semibold text-slate-700">Linked Technical Requirements</h2>
-                    <Link
-                        v-if="can.edit"
-                        :href="route('projects.requirements.technical.index', project.id)"
-                        class="text-xs text-primary hover:underline"
-                    >
-                        Manage in TR list →
-                    </Link>
+                <div class="px-5 py-3 border-b border-slate-100">
+                    <h2 class="text-sm font-semibold text-slate-700 mb-3">Linked Technical Requirements</h2>
+                    <form v-if="can.edit && linkable_trs.length" @submit.prevent="linkTr" class="flex gap-2">
+                        <select
+                            v-model="linkForm.technical_requirement_id"
+                            class="flex-1 border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        >
+                            <option value="" disabled>Select a TR to link…</option>
+                            <option v-for="tr in linkable_trs" :key="tr.id" :value="tr.id">
+                                {{ tr.ref }} — {{ tr.title }}
+                            </option>
+                        </select>
+                        <button
+                            type="submit"
+                            :disabled="!linkForm.technical_requirement_id || linkForm.processing"
+                            class="px-3 py-1.5 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition disabled:opacity-50"
+                        >
+                            Link
+                        </button>
+                    </form>
+                    <p v-else-if="can.edit && !linkable_trs.length" class="text-xs text-slate-400">
+                        All project TRs are already linked.
+                    </p>
                 </div>
                 <div v-if="br.technical_requirements.length === 0" class="px-5 py-4 text-sm text-slate-400">
                     No technical requirements linked yet.

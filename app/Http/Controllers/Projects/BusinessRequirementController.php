@@ -101,9 +101,22 @@ class BusinessRequirementController extends Controller
             'comments.user:id,name',
         ]);
 
+        $linkedTrIds = $br->technicalRequirements->pluck('id')->toArray();
+
+        $linkableTrs = $project->technicalRequirements()
+            ->whereNotIn('id', $linkedTrIds)
+            ->orderBy('number')
+            ->get()
+            ->map(fn ($tr) => [
+                'id'    => $tr->id,
+                'ref'   => $tr->ref,
+                'title' => $tr->title,
+            ]);
+
         return Inertia::render('projects/requirements/BrShow', [
-            'project' => $project->only('id', 'name'),
-            'br'      => [
+            'project'     => $project->only('id', 'name'),
+            'linkable_trs' => $linkableTrs,
+            'br'          => [
                 'id'             => $br->id,
                 'ref'            => $br->ref,
                 'number'         => $br->number,
@@ -121,14 +134,14 @@ class BusinessRequirementController extends Controller
                 'created_at'     => $br->created_at,
                 'updated_at'     => $br->updated_at,
                 'technical_requirements' => $br->technicalRequirements->map(fn ($tr) => [
-                    'id'     => $tr->id,
-                    'ref'    => $tr->ref,
-                    'title'  => $tr->title,
-                    'status' => $tr->status->value,
+                    'id'          => $tr->id,
+                    'ref'         => $tr->ref,
+                    'title'       => $tr->title,
+                    'status'      => $tr->status->value,
                     'status_label' => $tr->status->label(),
                     'status_color' => $tr->status->color(),
-                    'type'   => $tr->type->value,
-                    'type_label' => $tr->type->label(),
+                    'type'        => $tr->type->value,
+                    'type_label'  => $tr->type->label(),
                 ]),
                 'comments' => $br->comments->map(fn ($c) => [
                     'id'         => $c->id,
