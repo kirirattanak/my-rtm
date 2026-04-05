@@ -59,7 +59,7 @@ function setLink() {
 </script>
 
 <template>
-    <div class="border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-primary/40 focus-within:border-primary/40 transition">
+    <div class="border border-slate-200 rounded-lg overflow-hidden bg-white focus-within:ring-2 focus-within:ring-primary/40 focus-within:border-primary/40 transition">
         <!-- Toolbar -->
         <div v-if="editor" class="flex flex-wrap items-center gap-0.5 px-2 py-1.5 bg-slate-50 border-b border-slate-200">
             <!-- Text style -->
