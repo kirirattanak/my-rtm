@@ -251,6 +251,27 @@ export interface CoverageSummary {
     total_brs: number;
 }
 
+export interface ProjectCoverage {
+    br_count: number;
+    tr_count: number;
+    tc_count: number;
+    covered_brs: number;
+    covered_trs: number;
+    br_coverage: number;
+    tr_coverage: number;
+}
+
+export interface ActivityItem {
+    id: number;
+    action: 'created' | 'updated' | 'deleted' | 'commented';
+    subject_type: 'BR' | 'TR' | 'TC';
+    subject_id: number;
+    subject_title: string | null;
+    user_name: string;
+    created_at: string;
+    path: string;
+}
+
 export interface RtmTestCase {
     id: number;
     ref: string;

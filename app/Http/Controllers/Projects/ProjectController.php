@@ -86,6 +86,70 @@ class ProjectController extends Controller
 
         $project->load(['owner', 'projectMembers.user']);
 
+        // Coverage stats
+        $trs = $project->technicalRequirements()->with('testCases.runs')->get();
+        $coveredTrIds = $trs->filter(fn ($tr) =>
+            $tr->testCases->contains(fn ($tc) =>
+                $tc->runs->contains(fn ($r) => $r->status->value === 'pass')
+            )
+        )->pluck('id')->all();
+
+        $brs = $project->businessRequirements()->with('technicalRequirements:id')->get();
+        $coveredBrs = $brs->filter(fn ($br) =>
+            $br->technicalRequirements->isNotEmpty() &&
+            $br->technicalRequirements->every(fn ($tr) => in_array($tr->id, $coveredTrIds))
+        )->count();
+
+        $totalTrs = $trs->count();
+        $totalBrs = $brs->count();
+        $totalTcs = $project->testCases()->count();
+
+        $coverage = [
+            'br_count'    => $totalBrs,
+            'tr_count'    => $totalTrs,
+            'tc_count'    => $totalTcs,
+            'covered_brs' => $coveredBrs,
+            'covered_trs' => count($coveredTrIds),
+            'br_coverage' => $totalBrs ? round(($coveredBrs / $totalBrs) * 100) : 0,
+            'tr_coverage' => $totalTrs ? round((count($coveredTrIds) / $totalTrs) * 100) : 0,
+        ];
+
+        // Recent activity
+        $brIds = $brs->pluck('id');
+        $trIds = $trs->pluck('id');
+        $tcIds = $project->testCases()->pluck('id');
+
+        $activity = \App\Models\ActivityLog::with('user:id,name')
+            ->where(function ($q) use ($brIds, $trIds, $tcIds) {
+                $q->where(function ($q) use ($brIds) {
+                    $q->where('subject_type', \App\Models\BusinessRequirement::class)
+                      ->whereIn('subject_id', $brIds);
+                })->orWhere(function ($q) use ($trIds) {
+                    $q->where('subject_type', \App\Models\TechnicalRequirement::class)
+                      ->whereIn('subject_id', $trIds);
+                })->orWhere(function ($q) use ($tcIds) {
+                    $q->where('subject_type', \App\Models\TestCase::class)
+                      ->whereIn('subject_id', $tcIds);
+                });
+            })
+            ->latest()
+            ->limit(10)
+            ->get()
+            ->map(fn ($log) => [
+                'id'            => $log->id,
+                'action'        => $log->action,
+                'subject_type'  => match ($log->subject_type) {
+                    \App\Models\BusinessRequirement::class  => 'BR',
+                    \App\Models\TechnicalRequirement::class => 'TR',
+                    \App\Models\TestCase::class             => 'TC',
+                    default                                 => '?',
+                },
+                'subject_id'    => $log->subject_id,
+                'subject_title' => $log->data['title'] ?? null,
+                'user_name'     => $log->user->name,
+                'created_at'    => $log->created_at->diffForHumans(),
+            ]);
+
         return Inertia::render('projects/Show', [
             'project' => [
                 'id'           => $project->id,
@@ -107,6 +171,8 @@ class ProjectController extends Controller
                     'role_label' => $m->role->label(),
                 ]),
             ],
+            'coverage' => $coverage,
+            'activity' => $activity,
             'can' => [
                 'edit'          => $request->user()->can('update', $project),
                 'manageMembers' => $request->user()->can('manageMembers', $project),

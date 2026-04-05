@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { type BreadcrumbItem, type Project, USER_ROLE_LABELS } from '@/types';
+import { type ActivityItem, type BreadcrumbItem, type Project, type ProjectCoverage, USER_ROLE_LABELS } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
 
 const props = defineProps<{
     project: Project;
+    coverage: ProjectCoverage;
+    activity: ActivityItem[];
     can: { edit: boolean; manageMembers: boolean; delete: boolean };
 }>();
 
@@ -100,15 +102,95 @@ function confirmDelete() {
                 </div>
             </div>
 
-            <!-- Placeholders for future milestones -->
+            <!-- Coverage Overview + Recent Activity -->
             <div class="grid grid-cols-3 gap-6">
-                <div class="col-span-2 bg-white border border-slate-200 rounded-xl p-5">
-                    <h2 class="font-semibold text-slate-800 text-sm mb-3">Coverage Overview</h2>
-                    <p class="text-sm text-slate-400 italic">Available in Milestone 3 & 4 — Requirements and Test Cases.</p>
+                <!-- Coverage Overview -->
+                <div class="col-span-2 bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h2 class="font-semibold text-slate-800 text-sm">Coverage Overview</h2>
+                        <Link :href="route('projects.rtm', { project: project.id })" class="text-xs text-primary font-medium hover:underline">
+                            View RTM →
+                        </Link>
+                    </div>
+
+                    <!-- Counts -->
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="bg-slate-50 rounded-lg px-4 py-3 text-center">
+                            <p class="text-2xl font-bold text-slate-900">{{ coverage.br_count }}</p>
+                            <p class="text-xs text-slate-500 mt-0.5">Business Reqs</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg px-4 py-3 text-center">
+                            <p class="text-2xl font-bold text-slate-900">{{ coverage.tr_count }}</p>
+                            <p class="text-xs text-slate-500 mt-0.5">Technical Reqs</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg px-4 py-3 text-center">
+                            <p class="text-2xl font-bold text-slate-900">{{ coverage.tc_count }}</p>
+                            <p class="text-xs text-slate-500 mt-0.5">Test Cases</p>
+                        </div>
+                    </div>
+
+                    <!-- Progress bars -->
+                    <div class="space-y-3">
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-xs font-medium text-slate-600">BR Coverage</span>
+                                <span class="text-xs font-bold"
+                                    :class="coverage.br_coverage >= 80 ? 'text-emerald-600' : coverage.br_coverage >= 50 ? 'text-amber-500' : 'text-red-500'">
+                                    {{ coverage.br_coverage }}%
+                                </span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-2">
+                                <div class="h-2 rounded-full transition-all"
+                                    :class="coverage.br_coverage >= 80 ? 'bg-emerald-500' : coverage.br_coverage >= 50 ? 'bg-amber-400' : 'bg-red-500'"
+                                    :style="{ width: coverage.br_coverage + '%' }" />
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1">{{ coverage.covered_brs }} of {{ coverage.br_count }} covered</p>
+                        </div>
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-xs font-medium text-slate-600">TR Coverage</span>
+                                <span class="text-xs font-bold"
+                                    :class="coverage.tr_coverage >= 80 ? 'text-emerald-600' : coverage.tr_coverage >= 50 ? 'text-amber-500' : 'text-red-500'">
+                                    {{ coverage.tr_coverage }}%
+                                </span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-2">
+                                <div class="h-2 rounded-full transition-all"
+                                    :class="coverage.tr_coverage >= 80 ? 'bg-emerald-500' : coverage.tr_coverage >= 50 ? 'bg-amber-400' : 'bg-red-500'"
+                                    :style="{ width: coverage.tr_coverage + '%' }" />
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1">{{ coverage.covered_trs }} of {{ coverage.tr_count }} covered</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="bg-white border border-slate-200 rounded-xl p-5">
-                    <h2 class="font-semibold text-slate-800 text-sm mb-3">Recent Activity</h2>
-                    <p class="text-sm text-slate-400 italic">Activity feed coming soon.</p>
+
+                <!-- Recent Activity -->
+                <div class="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
+                    <h2 class="font-semibold text-slate-800 text-sm">Recent Activity</h2>
+
+                    <div v-if="activity.length === 0" class="text-sm text-slate-400 italic pt-2">
+                        No activity yet.
+                    </div>
+
+                    <div v-for="item in activity" :key="item.id" class="flex gap-2.5 text-xs">
+                        <!-- Subject type badge -->
+                        <span class="mt-0.5 flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold"
+                            :class="{
+                                'bg-sky-100 text-sky-700':    item.subject_type === 'BR',
+                                'bg-purple-100 text-purple-700': item.subject_type === 'TR',
+                                'bg-amber-100 text-amber-700':   item.subject_type === 'TC',
+                            }">
+                            {{ item.subject_type }}
+                        </span>
+                        <div class="min-w-0">
+                            <p class="text-slate-700 leading-snug">
+                                <span class="font-medium">{{ item.user_name }}</span>
+                                <span class="text-slate-400">{{' '}}{{ item.action === 'commented' ? 'commented on' : item.action }}{{' '}}</span>
+                                <a :href="item.path" class="truncate">{{ item.subject_title ?? `#${item.subject_id}` }}</a>
+                            </p>
+                            <p class="text-slate-400 mt-0.5">{{ item.created_at }}</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
