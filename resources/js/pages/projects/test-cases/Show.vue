@@ -107,7 +107,7 @@ function confirmDelete() {
             <div class="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
                 <div v-if="tc.description">
                     <h2 class="text-sm font-medium text-slate-500 mb-1">Description</h2>
-                    <p class="text-sm text-slate-700 whitespace-pre-wrap">{{ tc.description }}</p>
+                    <div class="prose prose-sm max-w-none text-slate-700" v-html="tc.description" />
                 </div>
 
                 <div v-if="tc.steps.length">

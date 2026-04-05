@@ -152,7 +152,7 @@ const hasLinks = () =>
             <!-- Description -->
             <div v-if="task.description" class="bg-white border border-slate-200 rounded-xl p-5">
                 <h2 class="text-sm font-medium text-slate-500 mb-2">Description</h2>
-                <p class="text-sm text-slate-700 whitespace-pre-wrap">{{ task.description }}</p>
+                <div class="prose prose-sm max-w-none text-slate-700" v-html="task.description" />
             </div>
 
             <!-- Log Hours -->

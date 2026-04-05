@@ -121,7 +121,7 @@ function unlinkTr(trId: number) {
             <!-- Description -->
             <div v-if="br.description" class="bg-white rounded-xl border border-slate-200 p-5">
                 <h2 class="text-sm font-medium text-slate-500 mb-2">Description</h2>
-                <p class="text-sm text-slate-700 whitespace-pre-wrap">{{ br.description }}</p>
+                <div class="prose prose-sm max-w-none text-slate-700" v-html="br.description" />
             </div>
 
             <!-- Linked TRs -->

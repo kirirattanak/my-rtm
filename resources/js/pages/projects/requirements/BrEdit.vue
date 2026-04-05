@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
+import RichEditor from '@/components/RichEditor.vue';
 import { type BreadcrumbItem, type SelectOption } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
@@ -79,11 +80,7 @@ function submit() {
                 <!-- Description -->
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
-                    <textarea
-                        v-model="form.description"
-                        rows="4"
-                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
-                    />
+                    <RichEditor v-model="form.description" />
                 </div>
 
                 <!-- Priority & Status -->

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
+import RichEditor from '@/components/RichEditor.vue';
 import TaskLinkPicker from '@/components/TaskLinkPicker.vue';
 import { type BreadcrumbItem, type SelectOption } from '@/types';
 import { Head, useForm } from '@inertiajs/vue3';
@@ -64,8 +65,7 @@ function submit() {
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-slate-600 mb-1">Description</label>
-                    <textarea v-model="form.description" rows="3"
-                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none" />
+                    <RichEditor v-model="form.description" />
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>

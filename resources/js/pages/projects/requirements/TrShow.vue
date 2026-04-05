@@ -111,7 +111,7 @@ function confirmDelete() {
             <!-- Description -->
             <div v-if="tr.description" class="bg-white rounded-xl border border-slate-200 p-5">
                 <h2 class="text-sm font-medium text-slate-500 mb-2">Description</h2>
-                <p class="text-sm text-slate-700 whitespace-pre-wrap">{{ tr.description }}</p>
+                <div class="prose prose-sm max-w-none text-slate-700" v-html="tr.description" />
             </div>
 
             <!-- Linked BRs -->
