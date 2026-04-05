@@ -30,6 +30,13 @@ const typeClass: Record<string, string> = {
     constraint:     'bg-rose-100 text-rose-700',
 };
 
+const runBadge: Record<string, string> = {
+    pass:    'bg-emerald-100 text-emerald-700',
+    fail:    'bg-red-100 text-red-700',
+    blocked: 'bg-amber-100 text-amber-700',
+    skipped: 'bg-slate-100 text-slate-500',
+};
+
 const priorityClass: Record<string, string> = {
     critical: 'bg-red-100 text-red-700',
     high:     'bg-orange-100 text-orange-700',
@@ -136,6 +143,69 @@ function confirmDelete() {
                                     {{ br.status_label }}
                                 </span>
                             </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Linked Test Cases -->
+            <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+                    <h2 class="text-sm font-semibold text-slate-700">Test Cases</h2>
+                    <Link
+                        :href="route('projects.test-cases.index', project.id)"
+                        class="text-xs text-primary hover:underline"
+                    >
+                        View all →
+                    </Link>
+                </div>
+                <div v-if="tr.test_cases.length === 0" class="px-5 py-4 text-sm text-slate-400">
+                    No test cases linked. Link this TR from a test case's detail page.
+                </div>
+                <table v-else class="w-full text-sm">
+                    <thead class="bg-slate-50 border-b border-slate-100">
+                        <tr>
+                            <th class="px-5 py-2 text-left text-xs font-medium text-slate-500">Ref</th>
+                            <th class="px-5 py-2 text-left text-xs font-medium text-slate-500">Title</th>
+                            <th class="px-5 py-2 text-left text-xs font-medium text-slate-500">Priority</th>
+                            <th class="px-5 py-2 text-left text-xs font-medium text-slate-500">Status</th>
+                            <th class="px-5 py-2 text-left text-xs font-medium text-slate-500">Last Run</th>
+                            <th class="px-5 py-2 text-left text-xs font-medium text-slate-500">Assignee</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <tr v-for="tc in tr.test_cases" :key="tc.id" class="hover:bg-slate-50">
+                            <td class="px-5 py-3 font-mono text-xs text-slate-400">
+                                <Link :href="route('projects.test-cases.show', [project.id, tc.id])" class="hover:text-primary">
+                                    {{ tc.ref }}
+                                </Link>
+                            </td>
+                            <td class="px-5 py-3 text-slate-800">
+                                <Link :href="route('projects.test-cases.show', [project.id, tc.id])" class="hover:text-primary">
+                                    {{ tc.title }}
+                                </Link>
+                            </td>
+                            <td class="px-5 py-3">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                                    :class="priorityClass[tc.priority]">
+                                    {{ tc.priority_label }}
+                                </span>
+                            </td>
+                            <td class="px-5 py-3">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                                    :class="statusClass[tc.status]">
+                                    {{ tc.status_label }}
+                                </span>
+                            </td>
+                            <td class="px-5 py-3">
+                                <span v-if="tc.latest_run"
+                                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                                    :class="runBadge[tc.latest_run]">
+                                    {{ tc.latest_run }}
+                                </span>
+                                <span v-else class="text-slate-300 text-xs">—</span>
+                            </td>
+                            <td class="px-5 py-3 text-slate-500 text-xs">{{ tc.assignee?.name ?? '—' }}</td>
                         </tr>
                     </tbody>
                 </table>

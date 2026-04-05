@@ -94,6 +94,8 @@ class TechnicalRequirementController extends Controller
         $tr = $technicalRequirement->load([
             'creator:id,name',
             'businessRequirements:id,number,title,status,priority',
+            'testCases.runs',
+            'testCases.assignee:id,name',
             'comments.user:id,name',
         ]);
 
@@ -123,6 +125,20 @@ class TechnicalRequirementController extends Controller
                     'priority'       => $br->priority->value,
                     'priority_label' => $br->priority->label(),
                     'priority_color' => $br->priority->color(),
+                ]),
+                'test_cases' => $tr->testCases->map(fn ($tc) => [
+                    'id'             => $tc->id,
+                    'ref'            => $tc->ref,
+                    'title'          => $tc->title,
+                    'type'           => $tc->type->value,
+                    'type_label'     => $tc->type->label(),
+                    'priority'       => $tc->priority->value,
+                    'priority_label' => $tc->priority->label(),
+                    'status'         => $tc->status->value,
+                    'status_label'   => $tc->status->label(),
+                    'status_color'   => $tc->status->color(),
+                    'assignee'       => $tc->assignee,
+                    'latest_run'     => $tc->runs->first()?->status?->value,
                 ]),
                 'comments' => $tr->comments->map(fn ($c) => [
                     'id'         => $c->id,

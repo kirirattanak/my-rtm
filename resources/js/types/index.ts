@@ -165,6 +165,20 @@ export interface BusinessRequirement extends BrListItem {
 export interface TechnicalRequirement extends TrListItem {
     description: string | null;
     updated_at: string;
+    test_cases: {
+        id: number;
+        ref: string;
+        title: string;
+        type: TrType;
+        type_label: string;
+        priority: BrPriority;
+        priority_label: string;
+        status: RequirementStatus;
+        status_label: string;
+        status_color: string;
+        assignee: Pick<User, 'id' | 'name'> | null;
+        latest_run: TestRunStatus | null;
+    }[];
     business_requirements: {
         id: number;
         ref: string;
