@@ -7,15 +7,13 @@ use App\Enums\TaskStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 class Task extends Model
 {
     protected $fillable = [
         'project_id',
         'sprint_id',
-        'taskable_type',
-        'taskable_id',
         'title',
         'description',
         'effort_estimate',
@@ -45,9 +43,19 @@ class Task extends Model
         return $this->belongsTo(Sprint::class);
     }
 
-    public function taskable(): MorphTo
+    public function linkedBrs(): MorphToMany
     {
-        return $this->morphTo();
+        return $this->morphedByMany(BusinessRequirement::class, 'linkable', 'task_links', 'task_id');
+    }
+
+    public function linkedTrs(): MorphToMany
+    {
+        return $this->morphedByMany(TechnicalRequirement::class, 'linkable', 'task_links', 'task_id');
+    }
+
+    public function linkedTcs(): MorphToMany
+    {
+        return $this->morphedByMany(TestCase::class, 'linkable', 'task_links', 'task_id');
     }
 
     public function assignee(): BelongsTo

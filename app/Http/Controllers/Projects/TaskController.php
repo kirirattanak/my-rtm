@@ -9,6 +9,7 @@ use App\Models\BusinessRequirement;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\TechnicalRequirement;
+use App\Models\TestCase;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -59,6 +60,7 @@ class TaskController extends Controller
             'effort_units' => collect(EffortUnit::cases())->map(fn ($c) => ['value' => $c->value, 'label' => $c->label()]),
             'linkable_brs' => $project->businessRequirements()->orderBy('number')->get()->map(fn ($br) => ['value' => $br->id, 'label' => "{$br->ref} — {$br->title}"]),
             'linkable_trs' => $project->technicalRequirements()->orderBy('number')->get()->map(fn ($tr) => ['value' => $tr->id, 'label' => "{$tr->ref} — {$tr->title}"]),
+            'linkable_tcs' => $project->testCases()->orderBy('number')->get()->map(fn ($tc) => ['value' => $tc->id, 'label' => "{$tc->ref} — {$tc->title}"]),
         ]);
     }
 
@@ -75,13 +77,15 @@ class TaskController extends Controller
             'status'          => 'required|in:' . implode(',', TaskStatus::values()),
             'due_date'        => 'nullable|date',
             'assignee_id'     => 'nullable|exists:users,id',
-            'taskable_type'   => 'nullable|in:br,tr',
-            'taskable_id'     => 'nullable|integer',
+            'linked_br_ids'   => 'nullable|array',
+            'linked_br_ids.*' => 'integer|exists:business_requirements,id',
+            'linked_tr_ids'   => 'nullable|array',
+            'linked_tr_ids.*' => 'integer|exists:technical_requirements,id',
+            'linked_tc_ids'   => 'nullable|array',
+            'linked_tc_ids.*' => 'integer|exists:test_cases,id',
         ]);
 
-        [$taskableType, $taskableId] = $this->resolveTaskable($data);
-
-        $project->tasks()->create([
+        $task = $project->tasks()->create([
             'title'           => $data['title'],
             'description'     => $data['description'] ?? null,
             'sprint_id'       => $data['sprint_id'] ?? null,
@@ -90,10 +94,12 @@ class TaskController extends Controller
             'status'          => $data['status'],
             'due_date'        => $data['due_date'] ?? null,
             'assignee_id'     => $data['assignee_id'] ?? null,
-            'taskable_type'   => $taskableType,
-            'taskable_id'     => $taskableId,
             'created_by'      => $request->user()->id,
         ]);
+
+        $task->linkedBrs()->sync($data['linked_br_ids'] ?? []);
+        $task->linkedTrs()->sync($data['linked_tr_ids'] ?? []);
+        $task->linkedTcs()->sync($data['linked_tc_ids'] ?? []);
 
         return redirect()->route('projects.tasks.index', $project)
             ->with('success', 'Task created.');
@@ -103,7 +109,7 @@ class TaskController extends Controller
     {
         $this->authorize('view', $task);
 
-        $task->load(['assignee:id,name', 'sprint:id,name', 'creator:id,name', 'logs.logger:id,name', 'taskable']);
+        $task->load(['assignee:id,name', 'sprint:id,name', 'creator:id,name', 'logs.logger:id,name', 'linkedBrs', 'linkedTrs', 'linkedTcs']);
 
         return Inertia::render('projects/tasks/Show', [
             'project' => $project->only('id', 'name'),
@@ -125,12 +131,9 @@ class TaskController extends Controller
                 'completed_at'      => $task->completed_at?->toDateString(),
                 'logged_hours'      => $task->totalLoggedHours(),
                 'effective_actual'  => $task->effectiveActualHours(),
-                'taskable_type'     => $task->taskable_type ? (str_contains($task->taskable_type, 'BusinessRequirement') ? 'br' : 'tr') : null,
-                'taskable'          => $task->taskable ? [
-                    'id'    => $task->taskable->id,
-                    'ref'   => $task->taskable->ref,
-                    'title' => $task->taskable->title,
-                ] : null,
+                'linked_brs'        => $task->linkedBrs->map(fn ($br) => ['id' => $br->id, 'ref' => $br->ref, 'title' => $br->title]),
+                'linked_trs'        => $task->linkedTrs->map(fn ($tr) => ['id' => $tr->id, 'ref' => $tr->ref, 'title' => $tr->title]),
+                'linked_tcs'        => $task->linkedTcs->map(fn ($tc) => ['id' => $tc->id, 'ref' => $tc->ref, 'title' => $tc->title]),
                 'logs'              => $task->logs->map(fn ($log) => [
                     'id'          => $log->id,
                     'hours'       => $log->hours,
@@ -151,6 +154,8 @@ class TaskController extends Controller
     {
         $this->authorize('update', $task);
 
+        $task->load(['linkedBrs', 'linkedTrs', 'linkedTcs']);
+
         return Inertia::render('projects/tasks/Edit', [
             'project'      => $project->only('id', 'name'),
             'task'         => [
@@ -163,8 +168,9 @@ class TaskController extends Controller
                 'status'          => $task->status->value,
                 'due_date'        => $task->due_date?->toDateString(),
                 'assignee_id'     => $task->assignee_id,
-                'taskable_type'   => $task->taskable_type ? (str_contains($task->taskable_type, 'BusinessRequirement') ? 'br' : 'tr') : null,
-                'taskable_id'     => $task->taskable_id,
+                'linked_br_ids'   => $task->linkedBrs->pluck('id')->all(),
+                'linked_tr_ids'   => $task->linkedTrs->pluck('id')->all(),
+                'linked_tc_ids'   => $task->linkedTcs->pluck('id')->all(),
             ],
             'sprints'      => $project->sprints()->get()->map(fn ($s) => ['value' => $s->id, 'label' => $s->name]),
             'members'      => $project->projectMembers()->with('user:id,name')->get()->map(fn ($m) => ['value' => $m->user_id, 'label' => $m->user->name]),
@@ -172,6 +178,7 @@ class TaskController extends Controller
             'effort_units' => collect(EffortUnit::cases())->map(fn ($c) => ['value' => $c->value, 'label' => $c->label()]),
             'linkable_brs' => $project->businessRequirements()->orderBy('number')->get()->map(fn ($br) => ['value' => $br->id, 'label' => "{$br->ref} — {$br->title}"]),
             'linkable_trs' => $project->technicalRequirements()->orderBy('number')->get()->map(fn ($tr) => ['value' => $tr->id, 'label' => "{$tr->ref} — {$tr->title}"]),
+            'linkable_tcs' => $project->testCases()->orderBy('number')->get()->map(fn ($tc) => ['value' => $tc->id, 'label' => "{$tc->ref} — {$tc->title}"]),
         ]);
     }
 
@@ -188,11 +195,13 @@ class TaskController extends Controller
             'status'          => 'required|in:' . implode(',', TaskStatus::values()),
             'due_date'        => 'nullable|date',
             'assignee_id'     => 'nullable|exists:users,id',
-            'taskable_type'   => 'nullable|in:br,tr',
-            'taskable_id'     => 'nullable|integer',
+            'linked_br_ids'   => 'nullable|array',
+            'linked_br_ids.*' => 'integer|exists:business_requirements,id',
+            'linked_tr_ids'   => 'nullable|array',
+            'linked_tr_ids.*' => 'integer|exists:technical_requirements,id',
+            'linked_tc_ids'   => 'nullable|array',
+            'linked_tc_ids.*' => 'integer|exists:test_cases,id',
         ]);
-
-        [$taskableType, $taskableId] = $this->resolveTaskable($data);
 
         $wasDone  = $task->status === TaskStatus::Done;
         $nowDone  = $data['status'] === TaskStatus::Done->value;
@@ -206,10 +215,12 @@ class TaskController extends Controller
             'status'          => $data['status'],
             'due_date'        => $data['due_date'] ?? null,
             'assignee_id'     => $data['assignee_id'] ?? null,
-            'taskable_type'   => $taskableType,
-            'taskable_id'     => $taskableId,
             'completed_at'    => ! $wasDone && $nowDone ? now() : ($wasDone && ! $nowDone ? null : $task->completed_at),
         ]);
+
+        $task->linkedBrs()->sync($data['linked_br_ids'] ?? []);
+        $task->linkedTrs()->sync($data['linked_tr_ids'] ?? []);
+        $task->linkedTcs()->sync($data['linked_tc_ids'] ?? []);
 
         return redirect()->route('projects.tasks.show', [$project, $task])
             ->with('success', 'Task updated.');
@@ -244,16 +255,4 @@ class TaskController extends Controller
             ->with('success', 'Task deleted.');
     }
 
-    private function resolveTaskable(array $data): array
-    {
-        if (empty($data['taskable_type']) || empty($data['taskable_id'])) {
-            return [null, null];
-        }
-
-        $type = $data['taskable_type'] === 'br'
-            ? BusinessRequirement::class
-            : TechnicalRequirement::class;
-
-        return [$type, $data['taskable_id']];
-    }
 }

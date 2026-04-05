@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
+import TaskLinkPicker from '@/components/TaskLinkPicker.vue';
 import { type BreadcrumbItem, type SelectOption } from '@/types';
 import { Head, useForm } from '@inertiajs/vue3';
 
@@ -11,6 +12,7 @@ const props = defineProps<{
     effort_units: SelectOption[];
     linkable_brs: SelectOption[];
     linkable_trs: SelectOption[];
+    linkable_tcs: SelectOption[];
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -29,8 +31,9 @@ const form = useForm({
     status:          'todo',
     due_date:        '',
     assignee_id:     '',
-    taskable_type:   '',
-    taskable_id:     '',
+    linked_br_ids:   [] as number[],
+    linked_tr_ids:   [] as number[],
+    linked_tc_ids:   [] as number[],
 });
 
 function submit() {
@@ -112,31 +115,14 @@ function submit() {
                     </div>
                 </div>
 
-                <!-- Link to BR or TR -->
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Link type</label>
-                        <select v-model="form.taskable_type"
-                            class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/50">
-                            <option value="">— None —</option>
-                            <option value="br">Business Requirement</option>
-                            <option value="tr">Technical Requirement</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Linked item</label>
-                        <select v-model="form.taskable_id" :disabled="!form.taskable_type"
-                            class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50">
-                            <option value="">— Select —</option>
-                            <template v-if="form.taskable_type === 'br'">
-                                <option v-for="br in linkable_brs" :key="br.value" :value="br.value">{{ br.label }}</option>
-                            </template>
-                            <template v-if="form.taskable_type === 'tr'">
-                                <option v-for="tr in linkable_trs" :key="tr.value" :value="tr.value">{{ tr.label }}</option>
-                            </template>
-                        </select>
-                    </div>
-                </div>
+                <!-- Linked requirements -->
+                <TaskLinkPicker
+                    v-model:brIds="form.linked_br_ids"
+                    v-model:trIds="form.linked_tr_ids"
+                    v-model:tcIds="form.linked_tc_ids"
+                    :linkable_brs="linkable_brs"
+                    :linkable_trs="linkable_trs"
+                    :linkable_tcs="linkable_tcs" />
 
                 <div class="flex gap-3 pt-2">
                     <button type="submit" :disabled="form.processing"

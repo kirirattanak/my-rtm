@@ -43,8 +43,6 @@ class CapacitySeeder extends Seeder
         $t1 = Task::create([
             'project_id'      => $ecommerce->id,
             'sprint_id'       => $sprint1->id,
-            'taskable_type'   => TechnicalRequirement::class,
-            'taskable_id'     => $tr1->id,
             'title'           => 'Implement Sanctum token authentication',
             'description'     => 'Set up Laravel Sanctum for SPA authentication with 24h token expiry.',
             'effort_estimate' => 8,
@@ -55,12 +53,11 @@ class CapacitySeeder extends Seeder
             'created_by'      => $pm->id,
             'completed_at'    => '2026-03-13 16:00:00',
         ]);
+        $t1->linkedTrs()->sync([$tr1->id]);
 
         $t2 = Task::create([
             'project_id'      => $ecommerce->id,
             'sprint_id'       => $sprint1->id,
-            'taskable_type'   => TechnicalRequirement::class,
-            'taskable_id'     => $tr2->id,
             'title'           => 'Enforce bcrypt password hashing',
             'description'     => 'Verify and update password hashing to use bcrypt with cost factor 12.',
             'effort_estimate' => 4,
@@ -71,12 +68,11 @@ class CapacitySeeder extends Seeder
             'created_by'      => $pm->id,
             'completed_at'    => '2026-03-14 11:00:00',
         ]);
+        $t2->linkedTrs()->sync([$tr2->id]);
 
         $t3 = Task::create([
             'project_id'      => $ecommerce->id,
             'sprint_id'       => $sprint1->id,
-            'taskable_type'   => BusinessRequirement::class,
-            'taskable_id'     => $br1->id,
             'title'           => 'Write auth acceptance criteria',
             'description'     => 'Document detailed acceptance criteria for user registration and login flows.',
             'effort_estimate' => 5,
@@ -87,12 +83,11 @@ class CapacitySeeder extends Seeder
             'created_by'      => $pm->id,
             'completed_at'    => '2026-03-12 14:00:00',
         ]);
+        $t3->linkedBrs()->sync([$br1->id]);
 
         $t4 = Task::create([
             'project_id'      => $ecommerce->id,
             'sprint_id'       => $sprint1->id,
-            'taskable_type'   => TechnicalRequirement::class,
-            'taskable_id'     => $tr1->id,
             'title'           => 'QA: auth flow end-to-end testing',
             'description'     => 'Execute manual test cases TC-001 and TC-002 for login flows.',
             'effort_estimate' => 6,
@@ -103,6 +98,7 @@ class CapacitySeeder extends Seeder
             'created_by'      => $pm->id,
             'completed_at'    => '2026-03-20 17:00:00',
         ]);
+        $t4->linkedTrs()->sync([$tr1->id]);
 
         // Log actual hours for Sprint 1 tasks
         $t1->logs()->create(['logged_by' => $dev->id,    'hours' => 9.5,  'notes' => 'Token refresh logic took longer than expected']);
@@ -121,8 +117,6 @@ class CapacitySeeder extends Seeder
         $t5 = Task::create([
             'project_id'      => $ecommerce->id,
             'sprint_id'       => $sprint2->id,
-            'taskable_type'   => TechnicalRequirement::class,
-            'taskable_id'     => $tr3->id,
             'title'           => 'Set up Elasticsearch index for products',
             'description'     => 'Configure Elasticsearch index mappings and index existing product data.',
             'effort_estimate' => 12,
@@ -132,12 +126,11 @@ class CapacitySeeder extends Seeder
             'assignee_id'     => $dev->id,
             'created_by'      => $pm->id,
         ]);
+        $t5->linkedTrs()->sync([$tr3->id]);
 
         $t6 = Task::create([
             'project_id'      => $ecommerce->id,
             'sprint_id'       => $sprint2->id,
-            'taskable_type'   => BusinessRequirement::class,
-            'taskable_id'     => $br2->id,
             'title'           => 'Design search UI with filters',
             'description'     => 'Create wireframes and component specs for search results page with faceted filters.',
             'effort_estimate' => 8,
@@ -148,12 +141,11 @@ class CapacitySeeder extends Seeder
             'created_by'      => $pm->id,
             'completed_at'    => '2026-04-03 15:00:00',
         ]);
+        $t6->linkedBrs()->sync([$br2->id]);
 
         $t7 = Task::create([
             'project_id'      => $ecommerce->id,
             'sprint_id'       => $sprint2->id,
-            'taskable_type'   => BusinessRequirement::class,
-            'taskable_id'     => $br3->id,
             'title'           => 'Map out 3-step checkout flow',
             'description'     => 'Define the checkout steps: address → payment → confirmation.',
             'effort_estimate' => 3,
@@ -164,12 +156,11 @@ class CapacitySeeder extends Seeder
             'created_by'      => $pm->id,
             'completed_at'    => '2026-04-04 10:00:00',
         ]);
+        $t7->linkedBrs()->sync([$br3->id]);
 
         $t8 = Task::create([
             'project_id'      => $ecommerce->id,
             'sprint_id'       => $sprint2->id,
-            'taskable_type'   => TechnicalRequirement::class,
-            'taskable_id'     => $tr4->id,
             'title'           => 'Set up k6 load testing environment',
             'description'     => 'Configure k6 and baseline load test scripts for the product listing endpoint.',
             'effort_estimate' => 6,
@@ -179,6 +170,7 @@ class CapacitySeeder extends Seeder
             'assignee_id'     => $tester->id,
             'created_by'      => $pm->id,
         ]);
+        $t8->linkedTrs()->sync([$tr4->id]);
 
         // Partial hours logged on active tasks
         $t5->logs()->create(['logged_by' => $dev->id, 'hours' => 6.0, 'notes' => 'Index mappings done, syncing data in progress']);
@@ -192,11 +184,9 @@ class CapacitySeeder extends Seeder
             'capacity'   => 80,
         ]);
 
-        Task::create([
+        $t9 = Task::create([
             'project_id'      => $ecommerce->id,
             'sprint_id'       => $sprint3->id,
-            'taskable_type'   => TechnicalRequirement::class,
-            'taskable_id'     => $tr4->id,
             'title'           => 'Run full P95 load test and optimise queries',
             'description'     => 'Execute k6 load test at 50 concurrent users and tune slow queries.',
             'effort_estimate' => 10,
@@ -206,12 +196,11 @@ class CapacitySeeder extends Seeder
             'assignee_id'     => $dev->id,
             'created_by'      => $pm->id,
         ]);
+        $t9->linkedTrs()->sync([$tr4->id]);
 
         Task::create([
             'project_id'      => $ecommerce->id,
             'sprint_id'       => $sprint3->id,
-            'taskable_type'   => null,
-            'taskable_id'     => null,
             'title'           => 'GDPR data retention policy review',
             'description'     => 'Work with legal to define retention schedules and implement anonymisation job.',
             'effort_estimate' => 5,
@@ -222,11 +211,9 @@ class CapacitySeeder extends Seeder
             'created_by'      => $pm->id,
         ]);
 
-        Task::create([
+        $t11 = Task::create([
             'project_id'      => $ecommerce->id,
             'sprint_id'       => $sprint3->id,
-            'taskable_type'   => TechnicalRequirement::class,
-            'taskable_id'     => $tr3->id,
             'title'           => 'QA: product search regression suite',
             'description'     => 'Execute TC-004 and write two additional search edge-case test cases.',
             'effort_estimate' => 8,
@@ -236,5 +223,6 @@ class CapacitySeeder extends Seeder
             'assignee_id'     => $tester->id,
             'created_by'      => $pm->id,
         ]);
+        $t11->linkedTrs()->sync([$tr3->id]);
     }
 }

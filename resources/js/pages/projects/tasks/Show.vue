@@ -40,13 +40,19 @@ function confirmDelete() {
     }
 }
 
-function taskableRoute(): string {
-    if (!props.task.taskable) return '#';
-    if (props.task.taskable_type === 'br') {
-        return route('projects.requirements.business.show', [props.project.id, props.task.taskable.id]);
-    }
-    return route('projects.requirements.technical.show', [props.project.id, props.task.taskable.id]);
+function brRoute(id: number): string {
+    return route('projects.requirements.business.show', [props.project.id, id]);
 }
+function trRoute(id: number): string {
+    return route('projects.requirements.technical.show', [props.project.id, id]);
+}
+function tcRoute(id: number): string {
+    return route('projects.test-cases.show', [props.project.id, id]);
+}
+const hasLinks = () =>
+    props.task.linked_brs.length > 0 ||
+    props.task.linked_trs.length > 0 ||
+    props.task.linked_tcs.length > 0;
 </script>
 
 <template>
@@ -115,14 +121,29 @@ function taskableRoute(): string {
                 </div>
 
                 <div class="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
-                    <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Linked Requirement</h2>
-                    <div v-if="task.taskable" class="text-sm">
-                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold mr-1"
-                            :class="task.taskable_type === 'br' ? 'bg-sky-100 text-sky-700' : 'bg-purple-100 text-purple-700'">
-                            {{ task.taskable_type?.toUpperCase() }}
-                        </span>
-                        <a :href="taskableRoute()" class="font-mono text-xs text-slate-400 mr-1">{{ task.taskable.ref }}</a>
-                        <a :href="taskableRoute()" class="text-slate-800 hover:text-primary">{{ task.taskable.title }}</a>
+                    <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Linked Requirements</h2>
+                    <div v-if="hasLinks()" class="space-y-2 text-sm">
+                        <template v-if="task.linked_brs.length">
+                            <div v-for="br in task.linked_brs" :key="br.id" class="flex items-center gap-1.5">
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-sky-700">BR</span>
+                                <a :href="brRoute(br.id)" class="font-mono text-xs text-slate-400 hover:text-primary">{{ br.ref }}</a>
+                                <a :href="brRoute(br.id)" class="text-slate-800 hover:text-primary truncate">{{ br.title }}</a>
+                            </div>
+                        </template>
+                        <template v-if="task.linked_trs.length">
+                            <div v-for="tr in task.linked_trs" :key="tr.id" class="flex items-center gap-1.5">
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700">TR</span>
+                                <a :href="trRoute(tr.id)" class="font-mono text-xs text-slate-400 hover:text-primary">{{ tr.ref }}</a>
+                                <a :href="trRoute(tr.id)" class="text-slate-800 hover:text-primary truncate">{{ tr.title }}</a>
+                            </div>
+                        </template>
+                        <template v-if="task.linked_tcs.length">
+                            <div v-for="tc in task.linked_tcs" :key="tc.id" class="flex items-center gap-1.5">
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">TC</span>
+                                <a :href="tcRoute(tc.id)" class="font-mono text-xs text-slate-400 hover:text-primary">{{ tc.ref }}</a>
+                                <a :href="tcRoute(tc.id)" class="text-slate-800 hover:text-primary truncate">{{ tc.title }}</a>
+                            </div>
+                        </template>
                     </div>
                     <p v-else class="text-sm text-slate-400 italic">Not linked to any requirement.</p>
                 </div>

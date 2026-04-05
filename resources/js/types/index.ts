@@ -330,6 +330,12 @@ export interface TaskListItem {
     sprint: { id: number; name: string } | null;
 }
 
+export interface TaskLink {
+    id: number;
+    ref: string;
+    title: string;
+}
+
 export interface Task extends TaskListItem {
     description: string | null;
     effort_unit_label: string;
@@ -338,8 +344,9 @@ export interface Task extends TaskListItem {
     completed_at: string | null;
     logged_hours: number;
     effective_actual: number | null;
-    taskable_type: 'br' | 'tr' | null;
-    taskable: { id: number; ref: string; title: string } | null;
+    linked_brs: TaskLink[];
+    linked_trs: TaskLink[];
+    linked_tcs: TaskLink[];
     logs: TaskLog[];
 }
 
