@@ -267,9 +267,9 @@ export interface ActivityItem {
     subject_type: 'BR' | 'TR' | 'TC';
     subject_id: number;
     subject_title: string | null;
+    path: string;
     user_name: string;
     created_at: string;
-    path: string;
 }
 
 export interface RtmTestCase {

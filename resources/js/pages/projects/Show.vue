@@ -186,7 +186,7 @@ function confirmDelete() {
                             <p class="text-slate-700 leading-snug">
                                 <span class="font-medium">{{ item.user_name }}</span>
                                 <span class="text-slate-400">{{' '}}{{ item.action === 'commented' ? 'commented on' : item.action }}{{' '}}</span>
-                                <a :href="item.path" class="truncate">{{ item.subject_title ?? `#${item.subject_id}` }}</a>
+                                <a :href="item.path" class="font-medium hover:text-primary hover:underline truncate">{{ item.subject_title ?? `#${item.subject_id}` }}</a>
                             </p>
                             <p class="text-slate-400 mt-0.5">{{ item.created_at }}</p>
                         </div>
