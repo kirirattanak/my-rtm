@@ -146,6 +146,12 @@ class ProjectController extends Controller
                 },
                 'subject_id'    => $log->subject_id,
                 'subject_title' => $log->data['title'] ?? null,
+                'path'          => match ($log->subject_type) {
+                    \App\Models\BusinessRequirement::class  => route('projects.requirements.business.show', [$project->id, $log->subject_id]),
+                    \App\Models\TechnicalRequirement::class => route('projects.requirements.technical.show', [$project->id, $log->subject_id]),
+                    \App\Models\TestCase::class             => route('projects.test-cases.show', [$project->id, $log->subject_id]),
+                    default                                 => '#',
+                },
                 'user_name'     => $log->user->name,
                 'created_at'    => $log->created_at->diffForHumans(),
             ]);
