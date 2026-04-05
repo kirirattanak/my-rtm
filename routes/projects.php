@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Projects\ProjectController;
 use App\Http\Controllers\Projects\ProjectMemberController;
+use App\Http\Controllers\Projects\RtmController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -13,4 +14,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('/{member}', [ProjectMemberController::class, 'update'])->name('update');
         Route::delete('/{member}', [ProjectMemberController::class, 'destroy'])->name('destroy');
     });
+
+    Route::get('projects/{project}/rtm', [RtmController::class, 'index'])->name('projects.rtm');
 });

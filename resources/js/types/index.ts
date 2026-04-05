@@ -251,4 +251,38 @@ export interface CoverageSummary {
     total_brs: number;
 }
 
+export interface RtmTestCase {
+    id: number;
+    ref: string;
+    title: string;
+    status: RequirementStatus;
+    status_label: string;
+    latest_run: TestRunStatus | null;
+    is_passing: boolean;
+}
+
+export interface RtmTr {
+    id: number;
+    ref: string;
+    title: string;
+    type: TrType;
+    type_label: string;
+    status: RequirementStatus;
+    status_label: string;
+    is_covered: boolean;
+    test_cases: RtmTestCase[];
+}
+
+export interface RtmBr {
+    id: number;
+    ref: string;
+    title: string;
+    priority: BrPriority;
+    priority_label: string;
+    status: RequirementStatus;
+    status_label: string;
+    is_covered: boolean;
+    trs: RtmTr[];
+}
+
 export type BreadcrumbItemType = BreadcrumbItem;

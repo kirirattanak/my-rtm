@@ -5,7 +5,7 @@ import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
-import { ClipboardList, Folder, FlaskConical, Mail, PieChart, Users } from 'lucide-vue-next';
+import { ClipboardList, Folder, FlaskConical, GitBranch, Mail, PieChart, Users } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from './AppLogo.vue';
 
@@ -45,6 +45,11 @@ const projectNavItems = computed<NavItem[]>(() => {
             title: 'Coverage',
             href: `/projects/${project.id}/coverage`,
             icon: PieChart,
+        },
+        {
+            title: 'RTM',
+            href: `/projects/${project.id}/rtm`,
+            icon: GitBranch,
         },
     ];
 });
