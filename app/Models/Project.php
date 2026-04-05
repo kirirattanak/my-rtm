@@ -76,4 +76,14 @@ class Project extends Model
     {
         return $this->hasMany(TestCase::class);
     }
+
+    public function sprints(): HasMany
+    {
+        return $this->hasMany(Sprint::class)->orderBy('start_date');
+    }
+
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(Task::class);
+    }
 }

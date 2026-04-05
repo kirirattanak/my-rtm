@@ -115,12 +115,13 @@ class ProjectController extends Controller
         ];
 
         // Recent activity
-        $brIds = $brs->pluck('id');
-        $trIds = $trs->pluck('id');
-        $tcIds = $project->testCases()->pluck('id');
+        $brIds   = $brs->pluck('id');
+        $trIds   = $trs->pluck('id');
+        $tcIds   = $project->testCases()->pluck('id');
+        $taskIds = $project->tasks()->pluck('id');
 
         $activity = \App\Models\ActivityLog::with('user:id,name')
-            ->where(function ($q) use ($brIds, $trIds, $tcIds) {
+            ->where(function ($q) use ($brIds, $trIds, $tcIds, $taskIds) {
                 $q->where(function ($q) use ($brIds) {
                     $q->where('subject_type', \App\Models\BusinessRequirement::class)
                       ->whereIn('subject_id', $brIds);
@@ -130,6 +131,9 @@ class ProjectController extends Controller
                 })->orWhere(function ($q) use ($tcIds) {
                     $q->where('subject_type', \App\Models\TestCase::class)
                       ->whereIn('subject_id', $tcIds);
+                })->orWhere(function ($q) use ($taskIds) {
+                    $q->where('subject_type', \App\Models\Task::class)
+                      ->whereIn('subject_id', $taskIds);
                 });
             })
             ->latest()
@@ -142,6 +146,7 @@ class ProjectController extends Controller
                     \App\Models\BusinessRequirement::class  => 'BR',
                     \App\Models\TechnicalRequirement::class => 'TR',
                     \App\Models\TestCase::class             => 'TC',
+                    \App\Models\Task::class                 => 'Task',
                     default                                 => '?',
                 },
                 'subject_id'    => $log->subject_id,
@@ -150,6 +155,7 @@ class ProjectController extends Controller
                     \App\Models\BusinessRequirement::class  => route('projects.requirements.business.show', [$project->id, $log->subject_id]),
                     \App\Models\TechnicalRequirement::class => route('projects.requirements.technical.show', [$project->id, $log->subject_id]),
                     \App\Models\TestCase::class             => route('projects.test-cases.show', [$project->id, $log->subject_id]),
+                    \App\Models\Task::class                 => route('projects.tasks.show', [$project->id, $log->subject_id]),
                     default                                 => '#',
                 },
                 'user_name'     => $log->user->name,
@@ -187,7 +193,7 @@ class ProjectController extends Controller
         ]);
     }
 
-    public function edit(Request $request, Project $project): Response
+    public function edit(Project $project): Response
     {
         $this->authorize('update', $project);
 

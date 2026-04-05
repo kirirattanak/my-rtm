@@ -8,6 +8,12 @@ use App\Models\TestCase;
 use App\Observers\BusinessRequirementObserver;
 use App\Observers\TechnicalRequirementObserver;
 use App\Observers\TestCaseObserver;
+use App\Models\Sprint;
+use App\Models\Task;
+use App\Observers\TaskObserver;
+use App\Policies\SprintPolicy;
+use App\Policies\TaskPolicy;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -28,5 +34,10 @@ class AppServiceProvider extends ServiceProvider
         BusinessRequirement::observe(BusinessRequirementObserver::class);
         TechnicalRequirement::observe(TechnicalRequirementObserver::class);
         TestCase::observe(TestCaseObserver::class);
+
+        Task::observe(TaskObserver::class);
+
+        Gate::policy(Sprint::class, SprintPolicy::class);
+        Gate::policy(Task::class, TaskPolicy::class);
     }
 }

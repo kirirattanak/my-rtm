@@ -263,8 +263,8 @@ export interface ProjectCoverage {
 
 export interface ActivityItem {
     id: number;
-    action: 'created' | 'updated' | 'deleted' | 'commented';
-    subject_type: 'BR' | 'TR' | 'TC';
+    action: 'created' | 'updated' | 'deleted' | 'commented' | 'logged_hours';
+    subject_type: 'BR' | 'TR' | 'TC' | 'Task';
     subject_id: number;
     subject_title: string | null;
     path: string;
@@ -304,6 +304,71 @@ export interface RtmBr {
     status_label: string;
     is_covered: boolean;
     trs: RtmTr[];
+}
+
+export type TaskStatus = 'todo' | 'in_progress' | 'done' | 'cancelled';
+export type EffortUnit = 'points' | 'hours';
+
+export interface TaskLog {
+    id: number;
+    hours: number;
+    notes: string | null;
+    logger_name: string;
+    created_at: string;
+}
+
+export interface TaskListItem {
+    id: number;
+    title: string;
+    status: TaskStatus;
+    status_label: string;
+    effort_estimate: number | null;
+    effort_unit: EffortUnit;
+    effort_unit_short: string;
+    due_date: string | null;
+    assignee: { id: number; name: string } | null;
+    sprint: { id: number; name: string } | null;
+}
+
+export interface Task extends TaskListItem {
+    description: string | null;
+    effort_unit_label: string;
+    creator: Pick<User, 'id' | 'name'>;
+    created_at: string;
+    completed_at: string | null;
+    logged_hours: number;
+    effective_actual: number | null;
+    taskable_type: 'br' | 'tr' | null;
+    taskable: { id: number; ref: string; title: string } | null;
+    logs: TaskLog[];
+}
+
+export interface SprintListItem {
+    id: number;
+    name: string;
+    start_date: string;
+    end_date: string;
+    capacity: number | null;
+    is_active: boolean;
+    tasks_count: number;
+}
+
+export interface WorkloadEntry {
+    assignee_id: number;
+    assignee_name: string;
+    points: { planned: number; done: number };
+    hours: { planned: number; actual: number; done: number };
+}
+
+export interface BurndownData {
+    labels: string[];
+    ideal: number[];
+    actual: number[];
+    total_planned: number;
+}
+
+export interface Sprint extends SprintListItem {
+    tasks: TaskListItem[];
 }
 
 export type BreadcrumbItemType = BreadcrumbItem;

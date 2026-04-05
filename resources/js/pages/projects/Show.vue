@@ -12,7 +12,7 @@ const props = defineProps<{
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
-    { title: props.project.name, href: route('projects.show', props.project.id) },
+    { title: props.project.name, href: route('projects.show', { project: props.project.id }) },
 ];
 
 const statusClasses: Record<string, string> = {
@@ -32,7 +32,7 @@ const roleColors: Record<string, string> = {
 
 function confirmDelete() {
     if (confirm(`Delete "${props.project.name}"? This cannot be undone.`)) {
-        router.delete(route('projects.destroy', props.project.id));
+        router.delete(route('projects.destroy', { project: props.project.id }));
     }
 }
 </script>
@@ -62,11 +62,11 @@ function confirmDelete() {
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <Link v-if="can.manageMembers" :href="route('projects.members.index', project.id)"
+                    <Link v-if="can.manageMembers" :href="route('projects.members.index', { project: project.id })"
                         class="text-sm font-medium text-slate-600 hover:text-slate-900 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-colors">
                         Members
                     </Link>
-                    <Link v-if="can.edit" :href="route('projects.edit', project.id)"
+                    <Link v-if="can.edit" :href="route('projects.edit', { project: project.id })"
                         class="text-sm font-medium text-slate-600 hover:text-slate-900 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-colors">
                         Edit
                     </Link>
@@ -176,16 +176,21 @@ function confirmDelete() {
                         <!-- Subject type badge -->
                         <span class="mt-0.5 flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold"
                             :class="{
-                                'bg-sky-100 text-sky-700':    item.subject_type === 'BR',
+                                'bg-sky-100 text-sky-700':       item.subject_type === 'BR',
                                 'bg-purple-100 text-purple-700': item.subject_type === 'TR',
                                 'bg-amber-100 text-amber-700':   item.subject_type === 'TC',
+                                'bg-slate-100 text-slate-600':   item.subject_type === 'Task',
                             }">
                             {{ item.subject_type }}
                         </span>
                         <div class="min-w-0">
                             <p class="text-slate-700 leading-snug">
                                 <span class="font-medium">{{ item.user_name }}</span>
-                                <span class="text-slate-400">{{' '}}{{ item.action === 'commented' ? 'commented on' : item.action }}{{' '}}</span>
+                                <span class="text-slate-400">{{' '}}{{
+                                    item.action === 'commented' ? 'commented on' :
+                                    item.action === 'logged_hours' ? 'logged hours on' :
+                                    item.action
+                                }}{{' '}}</span>
                                 <a :href="item.path" class="font-medium hover:text-primary hover:underline truncate">{{ item.subject_title ?? `#${item.subject_id}` }}</a>
                             </p>
                             <p class="text-slate-400 mt-0.5">{{ item.created_at }}</p>
@@ -198,7 +203,7 @@ function confirmDelete() {
             <div class="bg-white border border-slate-200 rounded-xl p-5">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="font-semibold text-slate-800 text-sm">Team Members</h2>
-                    <Link v-if="can.manageMembers" :href="route('projects.members.index', project.id)"
+                    <Link v-if="can.manageMembers" :href="route('projects.members.index', { project: project.id })"
                         class="text-xs text-primary font-medium hover:underline">
                         Manage →
                     </Link>
