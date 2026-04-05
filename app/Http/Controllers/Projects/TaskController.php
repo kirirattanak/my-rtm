@@ -215,6 +215,25 @@ class TaskController extends Controller
             ->with('success', 'Task updated.');
     }
 
+    public function updateStatus(Request $request, Project $project, Task $task): RedirectResponse
+    {
+        $this->authorize('update', $task);
+
+        $data = $request->validate([
+            'status' => 'required|in:' . implode(',', TaskStatus::values()),
+        ]);
+
+        $wasDone = $task->status === TaskStatus::Done;
+        $nowDone = $data['status'] === TaskStatus::Done->value;
+
+        $task->update([
+            'status'       => $data['status'],
+            'completed_at' => ! $wasDone && $nowDone ? now() : ($wasDone && ! $nowDone ? null : $task->completed_at),
+        ]);
+
+        return back();
+    }
+
     public function destroy(Project $project, Task $task): RedirectResponse
     {
         $this->authorize('delete', $task);

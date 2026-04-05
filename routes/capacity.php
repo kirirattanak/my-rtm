@@ -28,6 +28,9 @@ Route::middleware(['auth', 'verified'])->prefix('projects/{project}')->name('pro
         Route::patch('/{task}',    [TaskController::class, 'update'])->name('update');
         Route::delete('/{task}',   [TaskController::class, 'destroy'])->name('destroy');
 
+        // Inline status update
+        Route::patch('/{task}/status', [TaskController::class, 'updateStatus'])->name('status.update');
+
         // Log actual hours
         Route::post('/{task}/logs', [TaskLogController::class, 'store'])->name('logs.store');
     });
