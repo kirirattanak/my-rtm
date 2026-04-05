@@ -1,30 +1,29 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import type { PaginatorMeta, PaginatorLinks } from '@/types';
+import type { Paginator } from '@/types';
 
 const props = defineProps<{
-    meta: PaginatorMeta;
-    links: PaginatorLinks;
+    paginator: Paginator<unknown>;
 }>();
 
-// meta.links includes "Previous" at [0] and "Next" at [end]; slice those off
-const pageLinks = computed(() => props.meta.links.slice(1, -1));
+// links[0] = "Previous", links[last] = "Next" — slice them off, use prev/next_page_url directly
+const pageLinks = computed(() => props.paginator.links.slice(1, -1));
 </script>
 
 <template>
-    <div v-if="meta.last_page > 1 || meta.total > 0"
-        class="flex items-center justify-between py-3 px-1 border-t border-slate-100 mt-0">
+    <div v-if="paginator.last_page > 1 || paginator.total > 0"
+        class="flex items-center justify-between py-3 px-1 border-t border-slate-100">
 
         <p class="text-xs text-slate-400">
-            <template v-if="meta.total > 0 && meta.from">
-                Showing {{ meta.from }}–{{ meta.to }} of {{ meta.total }}
+            <template v-if="paginator.total > 0 && paginator.from">
+                Showing {{ paginator.from }}–{{ paginator.to }} of {{ paginator.total }}
             </template>
-            <template v-else-if="meta.total === 0">No results</template>
+            <template v-else-if="paginator.total === 0">No results</template>
         </p>
 
-        <div v-if="meta.last_page > 1" class="flex items-center gap-1">
-            <Link v-if="links.prev" :href="links.prev" preserve-scroll
+        <div v-if="paginator.last_page > 1" class="flex items-center gap-1">
+            <Link v-if="paginator.prev_page_url" :href="paginator.prev_page_url" preserve-scroll
                 class="px-2.5 py-1 text-xs rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
                 ← Prev
             </Link>
@@ -42,7 +41,7 @@ const pageLinks = computed(() => props.meta.links.slice(1, -1));
                 </Link>
             </template>
 
-            <Link v-if="links.next" :href="links.next" preserve-scroll
+            <Link v-if="paginator.next_page_url" :href="paginator.next_page_url" preserve-scroll
                 class="px-2.5 py-1 text-xs rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
                 Next →
             </Link>

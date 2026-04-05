@@ -112,7 +112,7 @@ const typeIcon: Record<string, string> = {
                         </tr>
                     </tbody>
                 </table>
-                <Pagination :meta="tcs.meta" :links="tcs.links" class="px-4" />
+                <Pagination :paginator="tcs" class="px-4" />
             </div>
         </div>
     </AppLayout>

@@ -28,7 +28,7 @@ const statusClasses: Record<string, string> = {
             <div class="flex items-center justify-between">
                 <div>
                     <h1 class="text-xl font-semibold text-slate-900">All Projects</h1>
-                    <p class="text-sm text-slate-500 mt-0.5">{{ projects.meta.total }} project{{ projects.meta.total !== 1 ? 's' : '' }}</p>
+                    <p class="text-sm text-slate-500 mt-0.5">{{ projects.total }} project{{ projects.total !== 1 ? 's' : '' }}</p>
                 </div>
                 <Link v-if="canCreate" :href="route('projects.create')"
                     class="inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-medium px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">
@@ -90,7 +90,7 @@ const statusClasses: Record<string, string> = {
                 </Link>
             </div>
 
-            <Pagination :meta="projects.meta" :links="projects.links" />
+            <Pagination :paginator="projects" />
         </div>
     </AppLayout>
 </template>

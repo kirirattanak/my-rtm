@@ -78,7 +78,7 @@ const statusLabel = (sprint: SprintListItem) => {
                     </div>
                 </div>
 
-                <Pagination :meta="sprints.meta" :links="sprints.links" />
+                <Pagination :paginator="sprints" />
             </div>
         </div>
     </AppLayout>

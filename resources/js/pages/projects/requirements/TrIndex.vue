@@ -88,7 +88,7 @@ const typeClass: Record<string, string> = {
                         </tr>
                     </tbody>
                 </table>
-                <Pagination :meta="trs.meta" :links="trs.links" class="px-4" />
+                <Pagination :paginator="trs" class="px-4" />
             </div>
         </div>
     </AppLayout>

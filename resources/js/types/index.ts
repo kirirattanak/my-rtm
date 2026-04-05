@@ -106,27 +106,17 @@ export interface SelectOption {
     label: string;
 }
 
-export interface PaginatorLinks {
-    first: string;
-    last: string;
-    prev: string | null;
-    next: string | null;
-}
-
-export interface PaginatorMeta {
-    current_page: number;
-    from: number | null;
-    last_page: number;
-    per_page: number;
-    to: number | null;
-    total: number;
-    links: { url: string | null; label: string; active: boolean }[];
-}
-
 export interface Paginator<T> {
     data: T[];
-    links: PaginatorLinks;
-    meta: PaginatorMeta;
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    from: number | null;
+    to: number | null;
+    total: number;
+    prev_page_url: string | null;
+    next_page_url: string | null;
+    links: { url: string | null; label: string; active: boolean }[];
 }
 
 export interface Comment {

@@ -64,7 +64,7 @@ watch([filterStatus, filterSprintId], () => {
                     <option value="none">No sprint</option>
                     <option v-for="s in sprints" :key="s.value" :value="s.value">{{ s.label }}</option>
                 </select>
-                <span class="text-xs text-slate-400 ml-auto">{{ tasks.meta.total }} tasks</span>
+                <span class="text-xs text-slate-400 ml-auto">{{ tasks.total }} tasks</span>
             </div>
 
             <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
@@ -107,7 +107,7 @@ watch([filterStatus, filterSprintId], () => {
                         </tr>
                     </tbody>
                 </table>
-                <Pagination :meta="tasks.meta" :links="tasks.links" class="px-5" />
+                <Pagination :paginator="tasks" class="px-5" />
             </div>
         </div>
     </AppLayout>

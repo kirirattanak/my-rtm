@@ -94,7 +94,7 @@ const statusClass: Record<string, string> = {
                         </tr>
                     </tbody>
                 </table>
-                <Pagination :meta="brs.meta" :links="brs.links" class="px-4" />
+                <Pagination :paginator="brs" class="px-4" />
             </div>
         </div>
     </AppLayout>
