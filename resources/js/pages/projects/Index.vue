@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { type BreadcrumbItem, type Project, type SharedData } from '@/types';
+import Pagination from '@/components/Pagination.vue';
+import { type BreadcrumbItem, type Paginator, type Project } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 
-defineProps<{ projects: Project[] }>();
+defineProps<{ projects: Paginator<Project> }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
 ];
 
-const user = usePage<SharedData>().props.auth.user;
+const user = (usePage().props as unknown as { auth: { user: { role: string } } }).auth.user;
 const canCreate = ['admin', 'project_manager'].includes(user.role);
 
 const statusClasses: Record<string, string> = {
@@ -27,7 +28,7 @@ const statusClasses: Record<string, string> = {
             <div class="flex items-center justify-between">
                 <div>
                     <h1 class="text-xl font-semibold text-slate-900">All Projects</h1>
-                    <p class="text-sm text-slate-500 mt-0.5">{{ projects.length }} project{{ projects.length !== 1 ? 's' : '' }}</p>
+                    <p class="text-sm text-slate-500 mt-0.5">{{ projects.meta.total }} project{{ projects.meta.total !== 1 ? 's' : '' }}</p>
                 </div>
                 <Link v-if="canCreate" :href="route('projects.create')"
                     class="inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-medium px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">
@@ -36,7 +37,7 @@ const statusClasses: Record<string, string> = {
             </div>
 
             <!-- Empty state -->
-            <div v-if="projects.length === 0"
+            <div v-if="projects.data.length === 0"
                 class="bg-white border border-dashed border-slate-200 rounded-xl p-12 text-center">
                 <p class="text-slate-500 text-sm">No projects yet.</p>
                 <Link v-if="canCreate" :href="route('projects.create')"
@@ -47,8 +48,8 @@ const statusClasses: Record<string, string> = {
 
             <!-- Project cards -->
             <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 stagger">
-                <Link v-for="project in projects" :key="project.id"
-                    :href="route('projects.show', project.id)"
+                <Link v-for="project in projects.data" :key="project.id"
+                    :href="route('projects.show', { project: project.id })"
                     class="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition-shadow block">
 
                     <div class="flex items-start justify-between mb-3">
@@ -88,6 +89,8 @@ const statusClasses: Record<string, string> = {
                     <p class="text-sm text-slate-400 group-hover:text-primary font-medium">New Project</p>
                 </Link>
             </div>
+
+            <Pagination :meta="projects.meta" :links="projects.links" />
         </div>
     </AppLayout>
 </template>

@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { type BreadcrumbItem, type TestCaseListItem } from '@/types';
+import Pagination from '@/components/Pagination.vue';
+import { type BreadcrumbItem, type Paginator, type TestCaseListItem } from '@/types';
 import { Head, Link } from '@inertiajs/vue3';
 
 const props = defineProps<{
     project: { id: number; name: string };
-    tcs: TestCaseListItem[];
+    tcs: Paginator<TestCaseListItem>;
     can: { create: boolean };
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Projects', href: '/projects' },
-    { title: props.project.name, href: route('projects.show', props.project.id) },
+    { title: props.project.name, href: route('projects.show', { project: props.project.id }) },
     { title: 'Test Cases', href: route('projects.test-cases.index', props.project.id) },
 ];
 
@@ -53,16 +54,14 @@ const typeIcon: Record<string, string> = {
                     <h1 class="text-xl font-semibold text-slate-900">Test Cases</h1>
                     <p class="text-sm text-slate-500 mt-0.5">{{ project.name }}</p>
                 </div>
-                <Link
-                    v-if="can.create"
+                <Link v-if="can.create"
                     :href="route('projects.test-cases.create', project.id)"
-                    class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition"
-                >
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition">
                     + New TC
                 </Link>
             </div>
 
-            <div v-if="tcs.length === 0" class="text-center py-16 text-slate-400">
+            <div v-if="tcs.data.length === 0" class="text-center py-16 text-slate-400">
                 <p class="text-lg font-medium">No test cases yet</p>
                 <p v-if="can.create" class="text-sm mt-1">Create the first one to get started.</p>
             </div>
@@ -81,12 +80,9 @@ const typeIcon: Record<string, string> = {
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
-                        <tr
-                            v-for="tc in tcs"
-                            :key="tc.id"
+                        <tr v-for="tc in tcs.data" :key="tc.id"
                             class="hover:bg-slate-50 transition cursor-pointer"
-                            @click="$inertia.visit(route('projects.test-cases.show', [project.id, tc.id]))"
-                        >
+                            @click="$inertia.visit(route('projects.test-cases.show', [project.id, tc.id]))">
                             <td class="px-4 py-3 font-mono text-xs text-slate-500">{{ tc.ref }}</td>
                             <td class="px-4 py-3 text-slate-800 font-medium">{{ tc.title }}</td>
                             <td class="px-4 py-3 text-slate-500 text-xs">
@@ -116,6 +112,7 @@ const typeIcon: Record<string, string> = {
                         </tr>
                     </tbody>
                 </table>
+                <Pagination :meta="tcs.meta" :links="tcs.links" class="px-4" />
             </div>
         </div>
     </AppLayout>

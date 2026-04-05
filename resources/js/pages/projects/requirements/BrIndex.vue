@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { type BreadcrumbItem, type BrListItem } from '@/types';
+import Pagination from '@/components/Pagination.vue';
+import { type BreadcrumbItem, type BrListItem, type Paginator } from '@/types';
 import { Head, Link } from '@inertiajs/vue3';
 
 const props = defineProps<{
     project: { id: number; name: string };
-    brs: BrListItem[];
+    brs: Paginator<BrListItem>;
     can: { create: boolean };
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Projects', href: '/projects' },
-    { title: props.project.name, href: route('projects.show', props.project.id) },
+    { title: props.project.name, href: route('projects.show', { project: props.project.id }) },
     { title: 'Business Requirements', href: route('projects.requirements.business.index', props.project.id) },
 ];
 
@@ -42,17 +43,15 @@ const statusClass: Record<string, string> = {
                     <h1 class="text-xl font-semibold text-slate-900">Business Requirements</h1>
                     <p class="text-sm text-slate-500 mt-0.5">{{ project.name }}</p>
                 </div>
-                <Link
-                    v-if="can.create"
+                <Link v-if="can.create"
                     :href="route('projects.requirements.business.create', project.id)"
-                    class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition"
-                >
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition">
                     + New BR
                 </Link>
             </div>
 
             <!-- Empty state -->
-            <div v-if="brs.length === 0" class="text-center py-16 text-slate-400">
+            <div v-if="brs.data.length === 0" class="text-center py-16 text-slate-400">
                 <p class="text-lg font-medium">No business requirements yet</p>
                 <p v-if="can.create" class="text-sm mt-1">Create the first one to get started.</p>
             </div>
@@ -72,12 +71,9 @@ const statusClass: Record<string, string> = {
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
-                        <tr
-                            v-for="br in brs"
-                            :key="br.id"
+                        <tr v-for="br in brs.data" :key="br.id"
                             class="hover:bg-slate-50 transition cursor-pointer"
-                            @click="$inertia.visit(route('projects.requirements.business.show', [project.id, br.id]))"
-                        >
+                            @click="$inertia.visit(route('projects.requirements.business.show', [project.id, br.id]))">
                             <td class="px-4 py-3 font-mono text-xs text-slate-500">{{ br.ref }}</td>
                             <td class="px-4 py-3 text-slate-800 font-medium">{{ br.title }}</td>
                             <td class="px-4 py-3">
@@ -98,6 +94,7 @@ const statusClass: Record<string, string> = {
                         </tr>
                     </tbody>
                 </table>
+                <Pagination :meta="brs.meta" :links="brs.links" class="px-4" />
             </div>
         </div>
     </AppLayout>

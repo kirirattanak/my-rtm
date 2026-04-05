@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Projects;
 use App\Enums\RequirementStatus;
 use App\Enums\TrType;
 use App\Http\Controllers\Controller;
-use App\Models\BusinessRequirement;
 use App\Models\Project;
 use App\Models\TechnicalRequirement;
 use Illuminate\Http\RedirectResponse;
@@ -21,21 +20,22 @@ class TechnicalRequirementController extends Controller
 
         $trs = $project->technicalRequirements()
             ->with('creator:id,name')
+            ->withCount('businessRequirements')
             ->orderBy('number')
-            ->get()
-            ->map(fn ($tr) => [
-                'id'          => $tr->id,
-                'ref'         => $tr->ref,
-                'number'      => $tr->number,
-                'title'       => $tr->title,
-                'type'        => $tr->type->value,
-                'type_label'  => $tr->type->label(),
-                'status'      => $tr->status->value,
+            ->paginate(25)
+            ->through(fn ($tr) => [
+                'id'           => $tr->id,
+                'ref'          => $tr->ref,
+                'number'       => $tr->number,
+                'title'        => $tr->title,
+                'type'         => $tr->type->value,
+                'type_label'   => $tr->type->label(),
+                'status'       => $tr->status->value,
                 'status_label' => $tr->status->label(),
                 'status_color' => $tr->status->color(),
-                'creator'     => $tr->creator,
-                'br_count'    => $tr->businessRequirements()->count(),
-                'created_at'  => $tr->created_at,
+                'creator'      => $tr->creator,
+                'br_count'     => $tr->business_requirements_count,
+                'created_at'   => $tr->created_at,
             ]);
 
         return Inertia::render('projects/requirements/TrIndex', [

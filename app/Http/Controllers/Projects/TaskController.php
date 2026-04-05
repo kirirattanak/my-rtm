@@ -5,11 +5,8 @@ namespace App\Http\Controllers\Projects;
 use App\Enums\EffortUnit;
 use App\Enums\TaskStatus;
 use App\Http\Controllers\Controller;
-use App\Models\BusinessRequirement;
 use App\Models\Project;
 use App\Models\Task;
-use App\Models\TechnicalRequirement;
-use App\Models\TestCase;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -23,25 +20,31 @@ class TaskController extends Controller
 
         $tasks = $project->tasks()
             ->with(['assignee:id,name', 'sprint:id,name'])
+            ->when($request->status, fn ($q, $v) => $q->where('status', $v))
+            ->when($request->sprint_id, fn ($q, $v) => $v === 'none' ? $q->whereNull('sprint_id') : $q->where('sprint_id', $v))
             ->orderByRaw("CASE status WHEN 'done' THEN 1 WHEN 'cancelled' THEN 2 ELSE 0 END")
             ->orderBy('due_date')
-            ->get()
-            ->map(fn ($t) => [
-                'id'               => $t->id,
-                'title'            => $t->title,
-                'status'           => $t->status->value,
-                'status_label'     => $t->status->label(),
-                'effort_estimate'  => $t->effort_estimate,
-                'effort_unit'      => $t->effort_unit->value,
-                'effort_unit_short'=> $t->effort_unit->shortLabel(),
-                'due_date'         => $t->due_date?->toDateString(),
-                'assignee'         => $t->assignee ? ['id' => $t->assignee->id, 'name' => $t->assignee->name] : null,
-                'sprint'           => $t->sprint ? ['id' => $t->sprint->id, 'name' => $t->sprint->name] : null,
+            ->paginate(25)
+            ->through(fn ($t) => [
+                'id'                => $t->id,
+                'title'             => $t->title,
+                'status'            => $t->status->value,
+                'status_label'      => $t->status->label(),
+                'effort_estimate'   => $t->effort_estimate,
+                'effort_unit'       => $t->effort_unit->value,
+                'effort_unit_short' => $t->effort_unit->shortLabel(),
+                'due_date'          => $t->due_date?->toDateString(),
+                'assignee'          => $t->assignee ? ['id' => $t->assignee->id, 'name' => $t->assignee->name] : null,
+                'sprint'            => $t->sprint ? ['id' => $t->sprint->id, 'name' => $t->sprint->name] : null,
             ]);
+
+        $sprints = $project->sprints()->orderBy('start_date')->get(['id', 'name']);
 
         return Inertia::render('projects/tasks/Index', [
             'project' => $project->only('id', 'name'),
             'tasks'   => $tasks,
+            'sprints' => $sprints->map(fn ($s) => ['value' => (string) $s->id, 'label' => $s->name]),
+            'filters' => $request->only('status', 'sprint_id'),
             'can'     => [
                 'create' => $request->user()->can('create', [Task::class, $project]),
             ],

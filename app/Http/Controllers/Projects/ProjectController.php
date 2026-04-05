@@ -22,8 +22,8 @@ class ProjectController extends Controller
             ->when(! $user->isAdmin(), fn ($q) => $q->whereHas('projectMembers', fn ($q) => $q->where('user_id', $user->id)))
             ->withCount('projectMembers')
             ->orderBy('name')
-            ->get()
-            ->map(fn (Project $p) => [
+            ->paginate(20)
+            ->through(fn (Project $p) => [
                 'id'             => $p->id,
                 'name'           => $p->name,
                 'description'    => $p->description,

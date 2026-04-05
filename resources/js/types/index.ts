@@ -106,6 +106,29 @@ export interface SelectOption {
     label: string;
 }
 
+export interface PaginatorLinks {
+    first: string;
+    last: string;
+    prev: string | null;
+    next: string | null;
+}
+
+export interface PaginatorMeta {
+    current_page: number;
+    from: number | null;
+    last_page: number;
+    per_page: number;
+    to: number | null;
+    total: number;
+    links: { url: string | null; label: string; active: boolean }[];
+}
+
+export interface Paginator<T> {
+    data: T[];
+    links: PaginatorLinks;
+    meta: PaginatorMeta;
+}
+
 export interface Comment {
     id: number;
     body: string;

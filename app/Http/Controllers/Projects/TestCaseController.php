@@ -20,11 +20,11 @@ class TestCaseController extends Controller
         $this->authorize('viewAny', [TestCase::class, $project]);
 
         $tcs = $project->testCases()
-            ->with(['creator:id,name', 'assignee:id,name'])
+            ->with(['creator:id,name', 'assignee:id,name', 'runs' => fn ($q) => $q->latest()->limit(1)])
             ->withCount('runs')
             ->orderBy('number')
-            ->get()
-            ->map(fn ($tc) => [
+            ->paginate(25)
+            ->through(fn ($tc) => [
                 'id'             => $tc->id,
                 'ref'            => $tc->ref,
                 'number'         => $tc->number,
@@ -39,7 +39,7 @@ class TestCaseController extends Controller
                 'assignee'       => $tc->assignee,
                 'creator'        => $tc->creator,
                 'runs_count'     => $tc->runs_count,
-                'latest_run'     => $tc->runs()->value('status'),
+                'latest_run'     => $tc->runs->first()?->status,
                 'created_at'     => $tc->created_at,
             ]);
 

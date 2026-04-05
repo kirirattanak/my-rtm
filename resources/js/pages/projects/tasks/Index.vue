@@ -1,39 +1,36 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
+import Pagination from '@/components/Pagination.vue';
 import TaskStatusSelect from '@/components/TaskStatusSelect.vue';
-import { type BreadcrumbItem, type TaskListItem } from '@/types';
-import { Head, Link } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { type BreadcrumbItem, type Paginator, type SelectOption, type TaskListItem } from '@/types';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { ref, watch } from 'vue';
 
 const props = defineProps<{
     project: { id: number; name: string };
-    tasks: TaskListItem[];
+    tasks: Paginator<TaskListItem>;
+    sprints: SelectOption[];
+    filters: { status?: string; sprint_id?: string };
     can: { create: boolean };
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Projects', href: '/projects' },
-    { title: props.project.name, href: route('projects.show', props.project.id) },
+    { title: props.project.name, href: route('projects.show', { project: props.project.id }) },
     { title: 'Tasks', href: '#' },
 ];
 
-const filterStatus = ref('');
-const filterSprint = ref('');
+const filterStatus   = ref(props.filters.status ?? '');
+const filterSprintId = ref(props.filters.sprint_id ?? '');
 
-const sprints = computed(() => {
-    const seen = new Map<number, string>();
-    props.tasks.forEach(t => {
-        if (t.sprint) seen.set(t.sprint.id, t.sprint.name);
-    });
-    return [...seen.entries()].map(([id, name]) => ({ id, name }));
+// Debounce-free: fire on change
+watch([filterStatus, filterSprintId], () => {
+    router.get(
+        route('projects.tasks.index', props.project.id),
+        { status: filterStatus.value || undefined, sprint_id: filterSprintId.value || undefined },
+        { preserveScroll: true, replace: true },
+    );
 });
-
-const filtered = computed(() => props.tasks.filter(t => {
-    if (filterStatus.value && t.status !== filterStatus.value) return false;
-    if (filterSprint.value && t.sprint?.id !== Number(filterSprint.value)) return false;
-    return true;
-}));
-
 </script>
 
 <template>
@@ -61,16 +58,17 @@ const filtered = computed(() => props.tasks.filter(t => {
                     <option value="done">Done</option>
                     <option value="cancelled">Cancelled</option>
                 </select>
-                <select v-model="filterSprint"
+                <select v-model="filterSprintId"
                     class="border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40">
                     <option value="">All sprints</option>
-                    <option v-for="s in sprints" :key="s.id" :value="s.id">{{ s.name }}</option>
+                    <option value="none">No sprint</option>
+                    <option v-for="s in sprints" :key="s.value" :value="s.value">{{ s.label }}</option>
                 </select>
-                <span class="text-xs text-slate-400 ml-auto">{{ filtered.length }} tasks</span>
+                <span class="text-xs text-slate-400 ml-auto">{{ tasks.meta.total }} tasks</span>
             </div>
 
             <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
-                <div v-if="filtered.length === 0" class="px-5 py-10 text-center text-sm text-slate-400">
+                <div v-if="tasks.data.length === 0" class="px-5 py-10 text-center text-sm text-slate-400">
                     No tasks found.
                 </div>
                 <table v-else class="w-full text-sm">
@@ -85,7 +83,7 @@ const filtered = computed(() => props.tasks.filter(t => {
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
-                        <tr v-for="task in filtered" :key="task.id" class="hover:bg-slate-50">
+                        <tr v-for="task in tasks.data" :key="task.id" class="hover:bg-slate-50">
                             <td class="px-5 py-3">
                                 <Link :href="route('projects.tasks.show', [project.id, task.id])"
                                     class="font-medium text-slate-800 hover:text-primary">
@@ -109,6 +107,7 @@ const filtered = computed(() => props.tasks.filter(t => {
                         </tr>
                     </tbody>
                 </table>
+                <Pagination :meta="tasks.meta" :links="tasks.links" class="px-5" />
             </div>
         </div>
     </AppLayout>

@@ -20,9 +20,10 @@ class BusinessRequirementController extends Controller
 
         $brs = $project->businessRequirements()
             ->with('creator:id,name')
+            ->withCount('technicalRequirements')
             ->orderBy('number')
-            ->get()
-            ->map(fn ($br) => [
+            ->paginate(25)
+            ->through(fn ($br) => [
                 'id'             => $br->id,
                 'ref'            => $br->ref,
                 'number'         => $br->number,
@@ -35,7 +36,7 @@ class BusinessRequirementController extends Controller
                 'status_color'   => $br->status->color(),
                 'category'       => $br->category,
                 'creator'        => $br->creator,
-                'tr_count'       => $br->technicalRequirements()->count(),
+                'tr_count'       => $br->technical_requirements_count,
                 'created_at'     => $br->created_at,
             ]);
 

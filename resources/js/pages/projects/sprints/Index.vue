@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { type BreadcrumbItem, type SprintListItem } from '@/types';
+import Pagination from '@/components/Pagination.vue';
+import { type BreadcrumbItem, type Paginator, type SprintListItem } from '@/types';
 import { Head, Link } from '@inertiajs/vue3';
 
 const props = defineProps<{
     project: { id: number; name: string };
-    sprints: SprintListItem[];
+    sprints: Paginator<SprintListItem>;
     can: { create: boolean };
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Projects', href: '/projects' },
-    { title: props.project.name, href: route('projects.show', props.project.id) },
+    { title: props.project.name, href: route('projects.show', { project: props.project.id }) },
     { title: 'Sprints', href: '#' },
 ];
 
@@ -45,12 +46,12 @@ const statusLabel = (sprint: SprintListItem) => {
                 </Link>
             </div>
 
-            <div v-if="sprints.length === 0" class="bg-white border border-slate-200 rounded-xl px-5 py-12 text-center">
+            <div v-if="sprints.data.length === 0" class="bg-white border border-slate-200 rounded-xl px-5 py-12 text-center">
                 <p class="text-slate-400 text-sm">No sprints yet. Create your first sprint to start planning.</p>
             </div>
 
-            <div class="space-y-3">
-                <div v-for="sprint in sprints" :key="sprint.id"
+            <div v-else class="space-y-3">
+                <div v-for="sprint in sprints.data" :key="sprint.id"
                     class="bg-white border border-slate-200 rounded-xl p-5 hover:border-slate-300 transition-colors">
                     <div class="flex items-start justify-between">
                         <div class="flex-1 min-w-0">
@@ -76,6 +77,8 @@ const statusLabel = (sprint: SprintListItem) => {
                         </div>
                     </div>
                 </div>
+
+                <Pagination :meta="sprints.meta" :links="sprints.links" />
             </div>
         </div>
     </AppLayout>

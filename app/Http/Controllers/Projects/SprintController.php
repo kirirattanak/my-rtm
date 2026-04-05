@@ -21,8 +21,9 @@ class SprintController extends Controller
 
         $sprints = $project->sprints()
             ->withCount('tasks')
-            ->get()
-            ->map(fn ($s) => $this->sprintSummary($s));
+            ->orderBy('start_date')
+            ->paginate(20)
+            ->through(fn ($s) => $this->sprintSummary($s));
 
         return Inertia::render('projects/sprints/Index', [
             'project' => $project->only('id', 'name'),
