@@ -71,4 +71,9 @@ class Project extends Model
     {
         return $this->hasMany(TechnicalRequirement::class);
     }
+
+    public function testCases(): HasMany
+    {
+        return $this->hasMany(TestCase::class);
+    }
 }

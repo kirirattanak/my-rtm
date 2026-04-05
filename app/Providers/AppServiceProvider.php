@@ -4,8 +4,10 @@ namespace App\Providers;
 
 use App\Models\BusinessRequirement;
 use App\Models\TechnicalRequirement;
+use App\Models\TestCase;
 use App\Observers\BusinessRequirementObserver;
 use App\Observers\TechnicalRequirementObserver;
+use App\Observers\TestCaseObserver;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -25,5 +27,6 @@ class AppServiceProvider extends ServiceProvider
     {
         BusinessRequirement::observe(BusinessRequirementObserver::class);
         TechnicalRequirement::observe(TechnicalRequirementObserver::class);
+        TestCase::observe(TestCaseObserver::class);
     }
 }

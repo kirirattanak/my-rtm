@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             ProjectSeeder::class,
             RequirementSeeder::class,
+            TestCaseSeeder::class,
         ]);
     }
 }

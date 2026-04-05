@@ -179,4 +179,62 @@ export interface TechnicalRequirement extends TrListItem {
     comments: Comment[];
 }
 
+export type TestCaseType = 'manual' | 'automated';
+export type TestRunStatus = 'pass' | 'fail' | 'blocked' | 'skipped';
+export type TestCaseStatus = RequirementStatus;
+
+export interface TestRun {
+    id: number;
+    status: TestRunStatus;
+    status_label: string;
+    color: string;
+    notes: string | null;
+    executor: Pick<User, 'id' | 'name'>;
+    created_at: string;
+}
+
+export interface TestCaseListItem {
+    id: number;
+    ref: string;
+    number: number;
+    title: string;
+    type: TestCaseType;
+    type_label: string;
+    priority: BrPriority;
+    priority_label: string;
+    status: RequirementStatus;
+    status_label: string;
+    status_color: string;
+    assignee: Pick<User, 'id' | 'name'> | null;
+    creator: Pick<User, 'id' | 'name'>;
+    runs_count: number;
+    latest_run: TestRunStatus | null;
+    created_at: string;
+}
+
+export interface TestCase extends TestCaseListItem {
+    description: string | null;
+    steps: string[];
+    expected_result: string | null;
+    updated_at: string;
+    technical_requirements: {
+        id: number;
+        ref: string;
+        title: string;
+        status: RequirementStatus;
+        status_label: string;
+        status_color: string;
+    }[];
+    runs: TestRun[];
+}
+
+export interface CoverageSummary {
+    tr_coverage: number;
+    covered_trs: number;
+    total_trs: number;
+    br_coverage: number;
+    covered_brs: number;
+    total_brs: number;
+}
+
 export type BreadcrumbItemType = BreadcrumbItem;
