@@ -174,14 +174,35 @@ function confirmDelete() {
 
                     <div v-for="item in activity" :key="item.id" class="flex gap-2.5 text-xs">
                         <!-- Subject type badge -->
-                        <span class="mt-0.5 flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold"
+                        <span class="mt-0.5 flex-shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-lg text-[10px] font-bold"
                             :class="{
                                 'bg-sky-100 text-sky-700':       item.subject_type === 'BR',
                                 'bg-purple-100 text-purple-700': item.subject_type === 'TR',
                                 'bg-amber-100 text-amber-700':   item.subject_type === 'TC',
-                                'bg-slate-100 text-slate-600':   item.subject_type === 'Task',
-                            }">
-                            {{ item.subject_type }}
+                                'bg-emerald-100 text-emerald-700': item.subject_type === 'Task',
+                                'bg-slate-100 text-slate-500':   item.subject_type === '?',
+                            }"
+                            :title="item.subject_type">
+                            <!-- BR: document icon -->
+                            <svg v-if="item.subject_type === 'BR'" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <!-- TR: code icon -->
+                            <svg v-else-if="item.subject_type === 'TR'" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                            </svg>
+                            <!-- TC: beaker/test icon -->
+                            <svg v-else-if="item.subject_type === 'TC'" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                            </svg>
+                            <!-- Task: checkbox/check icon -->
+                            <svg v-else-if="item.subject_type === 'Task'" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <!-- Fallback: question mark -->
+                            <svg v-else class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
                         </span>
                         <div class="min-w-0">
                             <p class="text-slate-700 leading-snug">

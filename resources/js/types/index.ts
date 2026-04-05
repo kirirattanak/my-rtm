@@ -277,7 +277,7 @@ export interface ProjectCoverage {
 export interface ActivityItem {
     id: number;
     action: 'created' | 'updated' | 'deleted' | 'commented' | 'logged_hours';
-    subject_type: 'BR' | 'TR' | 'TC' | 'Task';
+    subject_type: 'BR' | 'TR' | 'TC' | 'Task' | '?';
     subject_id: number;
     subject_title: string | null;
     path: string;
