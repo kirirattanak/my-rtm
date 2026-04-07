@@ -22,6 +22,7 @@ Route::middleware(['auth', 'verified'])->prefix('projects/{project}')->name('pro
     Route::prefix('tasks')->name('tasks.')->group(function () {
         Route::get('/',            [TaskController::class, 'index'])->name('index');
         Route::get('/gantt',       [TaskController::class, 'gantt'])->name('gantt');
+        Route::get('/calendar',    [TaskController::class, 'calendar'])->name('calendar');
         Route::get('/create',      [TaskController::class, 'create'])->name('create');
         Route::post('/',           [TaskController::class, 'store'])->name('store');
         Route::get('/{task}',      [TaskController::class, 'show'])->name('show');

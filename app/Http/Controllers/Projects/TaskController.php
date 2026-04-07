@@ -287,6 +287,32 @@ class TaskController extends Controller
         return back();
     }
 
+    public function calendar(Project $project): Response
+    {
+        $this->authorize('viewAny', [Task::class, $project]);
+
+        $tasks = $project->tasks()
+            ->with(['assignee:id,name'])
+            ->get()
+            ->map(fn ($t) => [
+                'id'             => $t->id,
+                'title'          => $t->title,
+                'status'         => $t->status->value,
+                'status_label'   => $t->status->label(),
+                'priority'       => $t->priority->value,
+                'priority_label' => $t->priority->label(),
+                'category'       => $t->category?->value,
+                'category_label' => $t->category?->label(),
+                'due_date'       => $t->due_date?->toDateString(),
+                'assignee'       => $t->assignee ? ['id' => $t->assignee->id, 'name' => $t->assignee->name] : null,
+            ]);
+
+        return Inertia::render('projects/tasks/Calendar', [
+            'project' => $project->only('id', 'name'),
+            'tasks'   => $tasks,
+        ]);
+    }
+
     public function gantt(Request $request, Project $project): Response
     {
         $this->authorize('viewAny', [Task::class, $project]);

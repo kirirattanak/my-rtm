@@ -56,6 +56,13 @@ watch([filterStatus, filterSprintId], applyFilters);
                     <p class="text-sm text-slate-500 mt-0.5">All tasks for {{ project.name }}.</p>
                 </div>
                 <div class="flex items-center gap-2">
+                    <Link :href="route('projects.tasks.calendar', project.id)"
+                        class="inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Calendar
+                    </Link>
                     <Link :href="route('projects.tasks.gantt', project.id)"
                         class="inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
