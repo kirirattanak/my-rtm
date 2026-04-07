@@ -10,7 +10,8 @@ const props = defineProps<{
     task: {
         id: number; title: string; description: string | null;
         sprint_id: number | null; effort_estimate: number | null;
-        effort_unit: string; status: string; priority: string; due_date: string | null;
+        effort_unit: string; status: string; priority: string;
+        due_date: string | null; start_date: string | null; end_date: string | null;
         assignee_id: number | null;
         linked_br_ids: number[]; linked_tr_ids: number[]; linked_tc_ids: number[];
     };
@@ -41,6 +42,8 @@ const form = useForm({
     status:          props.task.status,
     priority:        props.task.priority,
     due_date:        props.task.due_date ?? '',
+    start_date:      props.task.start_date ?? '',
+    end_date:        props.task.end_date ?? '',
     assignee_id:     props.task.assignee_id?.toString() ?? '',
     linked_br_ids:   props.task.linked_br_ids,
     linked_tr_ids:   props.task.linked_tr_ids,
@@ -117,10 +120,24 @@ function submit() {
                         </select>
                     </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">Due Date</label>
-                    <input v-model="form.due_date" type="date"
-                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                <!-- Dates -->
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Start Date</label>
+                        <input v-model="form.start_date" type="date"
+                            class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">End Date</label>
+                        <input v-model="form.end_date" type="date"
+                            class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                        <p v-if="form.errors.end_date" class="text-xs text-red-500 mt-1">{{ form.errors.end_date }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Due Date</label>
+                        <input v-model="form.due_date" type="date"
+                            class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                    </div>
                 </div>
                 <!-- Linked requirements -->
                 <TaskLinkPicker

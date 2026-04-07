@@ -21,6 +21,8 @@ class Task extends Model
         'effort_unit',
         'status',
         'due_date',
+        'start_date',
+        'end_date',
         'assignee_id',
         'created_by',
         'completed_at',
@@ -33,6 +35,8 @@ class Task extends Model
         'status'          => TaskStatus::class,
         'priority'        => BrPriority::class,
         'due_date'        => 'date',
+        'start_date'      => 'date',
+        'end_date'        => 'date',
         'completed_at'    => 'datetime',
     ];
 

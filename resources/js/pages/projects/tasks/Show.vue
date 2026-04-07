@@ -106,6 +106,14 @@ const hasLinks = () =>
                             <span class="text-slate-800 font-medium">{{ task.assignee?.name ?? '—' }}</span>
                         </div>
                         <div class="flex justify-between">
+                            <span class="text-slate-500">Start date</span>
+                            <span class="text-slate-800">{{ task.start_date ?? '—' }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">End date</span>
+                            <span class="text-slate-800">{{ task.end_date ?? '—' }}</span>
+                        </div>
+                        <div class="flex justify-between">
                             <span class="text-slate-500">Due date</span>
                             <span class="text-slate-800">{{ task.due_date ?? '—' }}</span>
                         </div>

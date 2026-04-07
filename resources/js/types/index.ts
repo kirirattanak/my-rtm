@@ -341,6 +341,8 @@ export interface TaskListItem {
     effort_unit: EffortUnit;
     effort_unit_short: string;
     due_date: string | null;
+    start_date: string | null;
+    end_date: string | null;
     assignee: { id: number; name: string } | null;
     sprint: { id: number; name: string } | null;
 }

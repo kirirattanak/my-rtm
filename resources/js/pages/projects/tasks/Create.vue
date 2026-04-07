@@ -33,6 +33,8 @@ const form = useForm({
     status:          'todo',
     priority:        'medium',
     due_date:        '',
+    start_date:      '',
+    end_date:        '',
     assignee_id:     '',
     linked_br_ids:   [] as number[],
     linked_tr_ids:   [] as number[],
@@ -119,11 +121,24 @@ function submit() {
                     </div>
                 </div>
 
-                <!-- Due date -->
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">Due Date</label>
-                    <input v-model="form.due_date" type="date"
-                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                <!-- Dates -->
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Start Date</label>
+                        <input v-model="form.start_date" type="date"
+                            class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">End Date</label>
+                        <input v-model="form.end_date" type="date"
+                            class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                        <p v-if="form.errors.end_date" class="text-xs text-red-500 mt-1">{{ form.errors.end_date }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Due Date</label>
+                        <input v-model="form.due_date" type="date"
+                            class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                    </div>
                 </div>
 
                 <!-- Linked requirements -->
