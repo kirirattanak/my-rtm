@@ -13,6 +13,8 @@ Route::middleware(['auth', 'verified'])->prefix('projects/{project}/requirements
         Route::get('/', [BusinessRequirementController::class, 'index'])->name('index');
         Route::get('/create', [BusinessRequirementController::class, 'create'])->name('create');
         Route::post('/', [BusinessRequirementController::class, 'store'])->name('store');
+        Route::get('/import', [BusinessRequirementController::class, 'importCreate'])->name('import');
+        Route::post('/import', [BusinessRequirementController::class, 'import'])->name('import.store');
         Route::get('/{businessRequirement}', [BusinessRequirementController::class, 'show'])->name('show');
         Route::get('/{businessRequirement}/edit', [BusinessRequirementController::class, 'edit'])->name('edit');
         Route::patch('/{businessRequirement}', [BusinessRequirementController::class, 'update'])->name('update');
@@ -31,6 +33,8 @@ Route::middleware(['auth', 'verified'])->prefix('projects/{project}/requirements
         Route::get('/', [TechnicalRequirementController::class, 'index'])->name('index');
         Route::get('/create', [TechnicalRequirementController::class, 'create'])->name('create');
         Route::post('/', [TechnicalRequirementController::class, 'store'])->name('store');
+        Route::get('/import', [TechnicalRequirementController::class, 'importCreate'])->name('import');
+        Route::post('/import', [TechnicalRequirementController::class, 'import'])->name('import.store');
         Route::get('/{technicalRequirement}', [TechnicalRequirementController::class, 'show'])->name('show');
         Route::get('/{technicalRequirement}/edit', [TechnicalRequirementController::class, 'edit'])->name('edit');
         Route::patch('/{technicalRequirement}', [TechnicalRequirementController::class, 'update'])->name('update');

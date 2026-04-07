@@ -43,11 +43,21 @@ const statusClass: Record<string, string> = {
                     <h1 class="text-xl font-semibold text-slate-900">Business Requirements</h1>
                     <p class="text-sm text-slate-500 mt-0.5">{{ project.name }}</p>
                 </div>
-                <Link v-if="can.create"
-                    :href="route('projects.requirements.business.create', project.id)"
-                    class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition">
-                    + New BR
-                </Link>
+                <div class="flex items-center gap-2">
+                    <Link v-if="can.create"
+                        :href="route('projects.requirements.business.import', project.id)"
+                        class="inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        Import CSV
+                    </Link>
+                    <Link v-if="can.create"
+                        :href="route('projects.requirements.business.create', project.id)"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition">
+                        + New BR
+                    </Link>
+                </div>
             </div>
 
             <!-- Empty state -->

@@ -13,6 +13,8 @@ Route::middleware(['auth', 'verified'])->prefix('projects/{project}')->name('pro
         Route::get('/',                    [TestCaseController::class, 'index'])->name('index');
         Route::get('/create',              [TestCaseController::class, 'create'])->name('create');
         Route::post('/',                   [TestCaseController::class, 'store'])->name('store');
+        Route::get('/import',              [TestCaseController::class, 'importCreate'])->name('import');
+        Route::post('/import',             [TestCaseController::class, 'import'])->name('import.store');
         Route::get('/{testCase}',          [TestCaseController::class, 'show'])->name('show');
         Route::get('/{testCase}/edit',     [TestCaseController::class, 'edit'])->name('edit');
         Route::patch('/{testCase}',        [TestCaseController::class, 'update'])->name('update');

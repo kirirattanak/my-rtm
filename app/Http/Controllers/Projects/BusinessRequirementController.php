@@ -214,4 +214,63 @@ class BusinessRequirementController extends Controller
         return redirect()->route('projects.requirements.business.index', $project)
             ->with('success', 'Business requirement deleted.');
     }
+
+    public function importCreate(Project $project): Response
+    {
+        $this->authorize('create', [BusinessRequirement::class, $project]);
+
+        return Inertia::render('projects/requirements/BrImport', [
+            'project' => $project->only('id', 'name'),
+            'result'  => session('import_result'),
+        ]);
+    }
+
+    public function import(Request $request, Project $project): RedirectResponse
+    {
+        $this->authorize('create', [BusinessRequirement::class, $project]);
+
+        $request->validate(['file' => 'required|file|mimes:csv,txt|max:5120']);
+
+        $handle = fopen($request->file('file')->getPathname(), 'r');
+        $rawHeader = fgetcsv($handle);
+        $header = array_map(fn ($h) => strtolower(trim($h)), $rawHeader);
+
+        $validPriorities = BrPriority::values();
+        $validStatuses   = RequirementStatus::values();
+
+        $imported   = 0;
+        $skipped    = [];
+        $rowNum     = 1;
+        $nextNumber = ($project->businessRequirements()->max('number') ?? 0) + 1;
+
+        while (($row = fgetcsv($handle)) !== false) {
+            $rowNum++;
+            if (count($row) < count($header)) {
+                $skipped[] = ['row' => $rowNum, 'reason' => 'Too few columns'];
+                continue;
+            }
+            $data = array_combine($header, array_map('trim', array_slice($row, 0, count($header))));
+
+            if (empty($data['title'] ?? '')) {
+                $skipped[] = ['row' => $rowNum, 'reason' => 'Missing title'];
+                continue;
+            }
+
+            $project->businessRequirements()->create([
+                'number'      => $nextNumber++,
+                'title'       => $data['title'],
+                'description' => $data['description'] ?? null ?: null,
+                'priority'    => in_array($data['priority'] ?? '', $validPriorities) ? $data['priority'] : 'medium',
+                'status'      => in_array($data['status'] ?? '', $validStatuses)   ? $data['status']   : 'draft',
+                'category'    => $data['category'] ?? null ?: null,
+                'created_by'  => $request->user()->id,
+            ]);
+            $imported++;
+        }
+
+        fclose($handle);
+
+        return redirect()->route('projects.requirements.business.import', $project)
+            ->with('import_result', ['imported' => $imported, 'skipped' => $skipped]);
+    }
 }

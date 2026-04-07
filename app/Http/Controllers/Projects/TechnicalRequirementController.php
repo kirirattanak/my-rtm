@@ -205,4 +205,61 @@ class TechnicalRequirementController extends Controller
         return redirect()->route('projects.requirements.technical.index', $project)
             ->with('success', 'Technical requirement deleted.');
     }
+
+    public function importCreate(Project $project): Response
+    {
+        $this->authorize('create', [TechnicalRequirement::class, $project]);
+
+        return Inertia::render('projects/requirements/TrImport', [
+            'project' => $project->only('id', 'name'),
+            'result'  => session('import_result'),
+        ]);
+    }
+
+    public function import(Request $request, Project $project): RedirectResponse
+    {
+        $this->authorize('create', [TechnicalRequirement::class, $project]);
+
+        $request->validate(['file' => 'required|file|mimes:csv,txt|max:5120']);
+
+        $handle = fopen($request->file('file')->getPathname(), 'r');
+        $header = array_map(fn ($h) => strtolower(trim($h)), fgetcsv($handle));
+
+        $validTypes    = TrType::values();
+        $validStatuses = RequirementStatus::values();
+
+        $imported   = 0;
+        $skipped    = [];
+        $rowNum     = 1;
+        $nextNumber = ($project->technicalRequirements()->max('number') ?? 0) + 1;
+
+        while (($row = fgetcsv($handle)) !== false) {
+            $rowNum++;
+            if (count($row) < count($header)) {
+                $skipped[] = ['row' => $rowNum, 'reason' => 'Too few columns'];
+                continue;
+            }
+            $data = array_combine($header, array_map('trim', array_slice($row, 0, count($header))));
+
+            if (empty($data['title'] ?? '')) {
+                $skipped[] = ['row' => $rowNum, 'reason' => 'Missing title'];
+                continue;
+            }
+
+            $project->technicalRequirements()->create([
+                'number'      => $nextNumber++,
+                'title'       => $data['title'],
+                'description' => $data['description'] ?? null ?: null,
+                'type'        => in_array($data['type'] ?? '', $validTypes)      ? $data['type']   : 'functional',
+                'status'      => in_array($data['status'] ?? '', $validStatuses) ? $data['status'] : 'draft',
+                'created_by'  => $request->user()->id,
+            ]);
+            $imported++;
+        }
+
+        fclose($handle);
+
+        return redirect()->route('projects.requirements.technical.import', $project)
+            ->with('import_result', ['imported' => $imported, 'skipped' => $skipped]);
+    }
 }
