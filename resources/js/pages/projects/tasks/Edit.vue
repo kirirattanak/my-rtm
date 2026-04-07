@@ -10,7 +10,7 @@ const props = defineProps<{
     task: {
         id: number; title: string; description: string | null;
         sprint_id: number | null; effort_estimate: number | null;
-        effort_unit: string; status: string; priority: string;
+        effort_unit: string; status: string; priority: string; category: string | null;
         due_date: string | null; start_date: string | null; end_date: string | null;
         assignee_id: number | null;
         linked_br_ids: number[]; linked_tr_ids: number[]; linked_tc_ids: number[];
@@ -19,6 +19,7 @@ const props = defineProps<{
     members: SelectOption[];
     statuses: SelectOption[];
     priorities: SelectOption[];
+    categories: SelectOption[];
     effort_units: SelectOption[];
     linkable_brs: SelectOption[];
     linkable_trs: SelectOption[];
@@ -41,6 +42,7 @@ const form = useForm({
     effort_unit:     props.task.effort_unit,
     status:          props.task.status,
     priority:        props.task.priority,
+    category:        props.task.category ?? '',
     due_date:        props.task.due_date ?? '',
     start_date:      props.task.start_date ?? '',
     end_date:        props.task.end_date ?? '',
@@ -86,7 +88,7 @@ function submit() {
                         </select>
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-3 gap-4">
                     <div>
                         <label class="block text-xs font-medium text-slate-600 mb-1">Status</label>
                         <select v-model="form.status"
@@ -99,6 +101,14 @@ function submit() {
                         <select v-model="form.priority"
                             class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/50">
                             <option v-for="p in priorities" :key="p.value" :value="p.value">{{ p.label }}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Category</label>
+                        <select v-model="form.category"
+                            class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <option value="">— None —</option>
+                            <option v-for="c in categories" :key="c.value" :value="c.value">{{ c.label }}</option>
                         </select>
                     </div>
                 </div>

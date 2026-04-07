@@ -79,6 +79,10 @@ const hasLinks = () =>
                             :class="priorityClass[task.priority]">
                             {{ task.priority_label }}
                         </span>
+                        <span v-if="task.category_label"
+                            class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
+                            {{ task.category_label }}
+                        </span>
                         <span v-if="task.sprint" class="text-xs text-slate-400">
                             in
                             <Link :href="route('projects.sprints.show', [project.id, task.sprint.id])"
@@ -101,6 +105,10 @@ const hasLinks = () =>
                 <div class="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
                     <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Details</h2>
                     <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">Category</span>
+                            <span class="text-slate-800">{{ task.category_label ?? '—' }}</span>
+                        </div>
                         <div class="flex justify-between">
                             <span class="text-slate-500">Assignee</span>
                             <span class="text-slate-800 font-medium">{{ task.assignee?.name ?? '—' }}</span>

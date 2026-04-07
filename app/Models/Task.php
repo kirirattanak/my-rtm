@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\BrPriority;
 use App\Enums\EffortUnit;
+use App\Enums\TaskCategory;
 use App\Enums\TaskStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,6 +28,7 @@ class Task extends Model
         'created_by',
         'completed_at',
         'priority',
+        'category',
     ];
 
     protected $casts = [
@@ -34,6 +36,7 @@ class Task extends Model
         'effort_unit'     => EffortUnit::class,
         'status'          => TaskStatus::class,
         'priority'        => BrPriority::class,
+        'category'        => TaskCategory::class,
         'due_date'        => 'date',
         'start_date'      => 'date',
         'end_date'        => 'date',
