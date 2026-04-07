@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Projects;
 
+use App\Enums\BrPriority;
 use App\Enums\EffortUnit;
 use App\Enums\TaskStatus;
 use App\Http\Controllers\Controller;
@@ -31,6 +32,8 @@ class TaskController extends Controller
                 'title'             => $t->title,
                 'status'            => $t->status->value,
                 'status_label'      => $t->status->label(),
+                'priority'          => $t->priority->value,
+                'priority_label'    => $t->priority->label(),
                 'effort_estimate'   => $t->effort_estimate,
                 'effort_unit'       => $t->effort_unit->value,
                 'effort_unit_short' => $t->effort_unit->shortLabel(),
@@ -61,6 +64,7 @@ class TaskController extends Controller
             'sprints'      => $project->sprints()->get()->map(fn ($s) => ['value' => $s->id, 'label' => $s->name]),
             'members'      => $project->projectMembers()->with('user:id,name')->get()->map(fn ($m) => ['value' => $m->user_id, 'label' => $m->user->name]),
             'statuses'     => collect(TaskStatus::cases())->map(fn ($c) => ['value' => $c->value, 'label' => $c->label()]),
+            'priorities'   => collect(BrPriority::cases())->map(fn ($c) => ['value' => $c->value, 'label' => $c->label()]),
             'effort_units' => collect(EffortUnit::cases())->map(fn ($c) => ['value' => $c->value, 'label' => $c->label()]),
             'linkable_brs' => $project->businessRequirements()->orderBy('number')->get()->map(fn ($br) => ['value' => $br->id, 'label' => "{$br->ref} — {$br->title}"]),
             'linkable_trs' => $project->technicalRequirements()->orderBy('number')->get()->map(fn ($tr) => ['value' => $tr->id, 'label' => "{$tr->ref} — {$tr->title}"]),
@@ -79,6 +83,7 @@ class TaskController extends Controller
             'effort_estimate' => 'nullable|numeric|min:0',
             'effort_unit'     => 'required|in:' . implode(',', EffortUnit::values()),
             'status'          => 'required|in:' . implode(',', TaskStatus::values()),
+            'priority'        => 'required|in:' . implode(',', BrPriority::values()),
             'due_date'        => 'nullable|date',
             'assignee_id'     => 'nullable|exists:users,id',
             'linked_br_ids'   => 'nullable|array',
@@ -96,6 +101,7 @@ class TaskController extends Controller
             'effort_estimate' => $data['effort_estimate'] ?? null,
             'effort_unit'     => $data['effort_unit'],
             'status'          => $data['status'],
+            'priority'        => $data['priority'],
             'due_date'        => $data['due_date'] ?? null,
             'assignee_id'     => $data['assignee_id'] ?? null,
             'created_by'      => $request->user()->id,
@@ -123,6 +129,8 @@ class TaskController extends Controller
                 'description'       => $task->description,
                 'status'            => $task->status->value,
                 'status_label'      => $task->status->label(),
+                'priority'          => $task->priority->value,
+                'priority_label'    => $task->priority->label(),
                 'effort_estimate'   => $task->effort_estimate,
                 'effort_unit'       => $task->effort_unit->value,
                 'effort_unit_label' => $task->effort_unit->label(),
@@ -170,6 +178,7 @@ class TaskController extends Controller
                 'effort_estimate' => $task->effort_estimate,
                 'effort_unit'     => $task->effort_unit->value,
                 'status'          => $task->status->value,
+                'priority'        => $task->priority->value,
                 'due_date'        => $task->due_date?->toDateString(),
                 'assignee_id'     => $task->assignee_id,
                 'linked_br_ids'   => $task->linkedBrs->pluck('id')->all(),
@@ -179,6 +188,7 @@ class TaskController extends Controller
             'sprints'      => $project->sprints()->get()->map(fn ($s) => ['value' => $s->id, 'label' => $s->name]),
             'members'      => $project->projectMembers()->with('user:id,name')->get()->map(fn ($m) => ['value' => $m->user_id, 'label' => $m->user->name]),
             'statuses'     => collect(TaskStatus::cases())->map(fn ($c) => ['value' => $c->value, 'label' => $c->label()]),
+            'priorities'   => collect(BrPriority::cases())->map(fn ($c) => ['value' => $c->value, 'label' => $c->label()]),
             'effort_units' => collect(EffortUnit::cases())->map(fn ($c) => ['value' => $c->value, 'label' => $c->label()]),
             'linkable_brs' => $project->businessRequirements()->orderBy('number')->get()->map(fn ($br) => ['value' => $br->id, 'label' => "{$br->ref} — {$br->title}"]),
             'linkable_trs' => $project->technicalRequirements()->orderBy('number')->get()->map(fn ($tr) => ['value' => $tr->id, 'label' => "{$tr->ref} — {$tr->title}"]),
@@ -197,6 +207,7 @@ class TaskController extends Controller
             'effort_estimate' => 'nullable|numeric|min:0',
             'effort_unit'     => 'required|in:' . implode(',', EffortUnit::values()),
             'status'          => 'required|in:' . implode(',', TaskStatus::values()),
+            'priority'        => 'required|in:' . implode(',', BrPriority::values()),
             'due_date'        => 'nullable|date',
             'assignee_id'     => 'nullable|exists:users,id',
             'linked_br_ids'   => 'nullable|array',
@@ -217,6 +228,7 @@ class TaskController extends Controller
             'effort_estimate' => $data['effort_estimate'] ?? null,
             'effort_unit'     => $data['effort_unit'],
             'status'          => $data['status'],
+            'priority'        => $data['priority'],
             'due_date'        => $data['due_date'] ?? null,
             'assignee_id'     => $data['assignee_id'] ?? null,
             'completed_at'    => ! $wasDone && $nowDone ? now() : ($wasDone && ! $nowDone ? null : $task->completed_at),

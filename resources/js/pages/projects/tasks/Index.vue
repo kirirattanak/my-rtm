@@ -97,6 +97,7 @@ watch([filterStatus, filterSprintId], applyFilters);
                         <tr>
                             <th class="px-5 py-2 text-left text-xs font-medium text-slate-500">Title</th>
                             <th class="px-5 py-2 text-left text-xs font-medium text-slate-500 w-28">Status</th>
+                            <th class="px-5 py-2 text-left text-xs font-medium text-slate-500 w-24">Priority</th>
                             <th class="px-5 py-2 text-left text-xs font-medium text-slate-500 w-28">Effort</th>
                             <th class="px-5 py-2 text-left text-xs font-medium text-slate-500 w-32">Sprint</th>
                             <th class="px-5 py-2 text-left text-xs font-medium text-slate-500 w-32">Assignee</th>
@@ -113,6 +114,17 @@ watch([filterStatus, filterSprintId], applyFilters);
                             </td>
                             <td class="px-5 py-3">
                                 <TaskStatusSelect :task="task" :project-id="project.id" />
+                            </td>
+                            <td class="px-5 py-3">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                                    :class="{
+                                        'bg-red-100 text-red-700':    task.priority === 'critical',
+                                        'bg-orange-100 text-orange-700': task.priority === 'high',
+                                        'bg-amber-100 text-amber-700':   task.priority === 'medium',
+                                        'bg-slate-100 text-slate-500':   task.priority === 'low',
+                                    }">
+                                    {{ task.priority_label }}
+                                </span>
                             </td>
                             <td class="px-5 py-3 text-xs text-slate-500">
                                 <span v-if="task.effort_estimate">{{ task.effort_estimate }} {{ task.effort_unit_short }}</span>

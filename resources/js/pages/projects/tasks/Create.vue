@@ -10,6 +10,7 @@ const props = defineProps<{
     sprints: SelectOption[];
     members: SelectOption[];
     statuses: SelectOption[];
+    priorities: SelectOption[];
     effort_units: SelectOption[];
     linkable_brs: SelectOption[];
     linkable_trs: SelectOption[];
@@ -30,6 +31,7 @@ const form = useForm({
     effort_estimate: '',
     effort_unit:     'points',
     status:          'todo',
+    priority:        'medium',
     due_date:        '',
     assignee_id:     '',
     linked_br_ids:   [] as number[],
@@ -79,7 +81,7 @@ function submit() {
                     </div>
                 </div>
 
-                <!-- Status + Sprint -->
+                <!-- Status + Priority -->
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-medium text-slate-600 mb-1">Status</label>
@@ -89,6 +91,17 @@ function submit() {
                         </select>
                     </div>
                     <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Priority</label>
+                        <select v-model="form.priority"
+                            class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <option v-for="p in priorities" :key="p.value" :value="p.value">{{ p.label }}</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Sprint + Assignee -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
                         <label class="block text-xs font-medium text-slate-600 mb-1">Sprint</label>
                         <select v-model="form.sprint_id"
                             class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/50">
@@ -96,10 +109,6 @@ function submit() {
                             <option v-for="s in sprints" :key="s.value" :value="s.value">{{ s.label }}</option>
                         </select>
                     </div>
-                </div>
-
-                <!-- Assignee + Due date -->
-                <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-medium text-slate-600 mb-1">Assignee</label>
                         <select v-model="form.assignee_id"
@@ -108,11 +117,13 @@ function submit() {
                             <option v-for="m in members" :key="m.value" :value="m.value">{{ m.label }}</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Due Date</label>
-                        <input v-model="form.due_date" type="date"
-                            class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                    </div>
+                </div>
+
+                <!-- Due date -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Due Date</label>
+                    <input v-model="form.due_date" type="date"
+                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
                 </div>
 
                 <!-- Linked requirements -->

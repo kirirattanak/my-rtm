@@ -10,13 +10,14 @@ const props = defineProps<{
     task: {
         id: number; title: string; description: string | null;
         sprint_id: number | null; effort_estimate: number | null;
-        effort_unit: string; status: string; due_date: string | null;
+        effort_unit: string; status: string; priority: string; due_date: string | null;
         assignee_id: number | null;
         linked_br_ids: number[]; linked_tr_ids: number[]; linked_tc_ids: number[];
     };
     sprints: SelectOption[];
     members: SelectOption[];
     statuses: SelectOption[];
+    priorities: SelectOption[];
     effort_units: SelectOption[];
     linkable_brs: SelectOption[];
     linkable_trs: SelectOption[];
@@ -38,6 +39,7 @@ const form = useForm({
     effort_estimate: props.task.effort_estimate?.toString() ?? '',
     effort_unit:     props.task.effort_unit,
     status:          props.task.status,
+    priority:        props.task.priority,
     due_date:        props.task.due_date ?? '',
     assignee_id:     props.task.assignee_id?.toString() ?? '',
     linked_br_ids:   props.task.linked_br_ids,
@@ -90,6 +92,15 @@ function submit() {
                         </select>
                     </div>
                     <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Priority</label>
+                        <select v-model="form.priority"
+                            class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <option v-for="p in priorities" :key="p.value" :value="p.value">{{ p.label }}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
                         <label class="block text-xs font-medium text-slate-600 mb-1">Sprint</label>
                         <select v-model="form.sprint_id"
                             class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/50">
@@ -97,8 +108,6 @@ function submit() {
                             <option v-for="s in sprints" :key="s.value" :value="s.value">{{ s.label }}</option>
                         </select>
                     </div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-medium text-slate-600 mb-1">Assignee</label>
                         <select v-model="form.assignee_id"
@@ -107,11 +116,11 @@ function submit() {
                             <option v-for="m in members" :key="m.value" :value="m.value">{{ m.label }}</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Due Date</label>
-                        <input v-model="form.due_date" type="date"
-                            class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Due Date</label>
+                    <input v-model="form.due_date" type="date"
+                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
                 </div>
                 <!-- Linked requirements -->
                 <TaskLinkPicker

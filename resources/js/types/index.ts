@@ -335,6 +335,8 @@ export interface TaskListItem {
     title: string;
     status: TaskStatus;
     status_label: string;
+    priority: BrPriority;
+    priority_label: string;
     effort_estimate: number | null;
     effort_unit: EffortUnit;
     effort_unit_short: string;

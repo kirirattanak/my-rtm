@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\BrPriority;
 use App\Enums\EffortUnit;
 use App\Enums\TaskStatus;
 use Illuminate\Database\Eloquent\Model;
@@ -23,12 +24,14 @@ class Task extends Model
         'assignee_id',
         'created_by',
         'completed_at',
+        'priority',
     ];
 
     protected $casts = [
         'effort_estimate' => 'decimal:2',
         'effort_unit'     => EffortUnit::class,
         'status'          => TaskStatus::class,
+        'priority'        => BrPriority::class,
         'due_date'        => 'date',
         'completed_at'    => 'datetime',
     ];

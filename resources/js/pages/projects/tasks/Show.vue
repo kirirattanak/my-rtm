@@ -23,6 +23,13 @@ const statusClass: Record<string, string> = {
     cancelled:   'bg-red-100 text-red-500',
 };
 
+const priorityClass: Record<string, string> = {
+    critical: 'bg-red-100 text-red-700',
+    high:     'bg-orange-100 text-orange-700',
+    medium:   'bg-amber-100 text-amber-700',
+    low:      'bg-slate-100 text-slate-500',
+};
+
 const logForm = useForm({
     hours: '',
     notes: '',
@@ -67,6 +74,10 @@ const hasLinks = () =>
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                             :class="statusClass[task.status]">
                             {{ task.status_label }}
+                        </span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                            :class="priorityClass[task.priority]">
+                            {{ task.priority_label }}
                         </span>
                         <span v-if="task.sprint" class="text-xs text-slate-400">
                             in
