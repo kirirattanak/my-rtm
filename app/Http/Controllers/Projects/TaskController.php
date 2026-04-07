@@ -275,6 +275,35 @@ class TaskController extends Controller
         return back();
     }
 
+    public function gantt(Request $request, Project $project): Response
+    {
+        $this->authorize('viewAny', [Task::class, $project]);
+
+        $tasks = $project->tasks()
+            ->with(['assignee:id,name', 'sprint:id,name'])
+            ->orderByRaw('start_date IS NULL, start_date')
+            ->orderByRaw('due_date IS NULL, due_date')
+            ->get()
+            ->map(fn ($t) => [
+                'id'            => $t->id,
+                'title'         => $t->title,
+                'status'        => $t->status->value,
+                'status_label'  => $t->status->label(),
+                'priority'      => $t->priority->value,
+                'priority_label'=> $t->priority->label(),
+                'start_date'    => $t->start_date?->toDateString(),
+                'end_date'      => $t->end_date?->toDateString(),
+                'due_date'      => $t->due_date?->toDateString(),
+                'assignee'      => $t->assignee ? ['id' => $t->assignee->id, 'name' => $t->assignee->name] : null,
+                'sprint'        => $t->sprint ? ['id' => $t->sprint->id, 'name' => $t->sprint->name] : null,
+            ]);
+
+        return Inertia::render('projects/tasks/Gantt', [
+            'project' => $project->only('id', 'name'),
+            'tasks'   => $tasks,
+        ]);
+    }
+
     public function destroy(Project $project, Task $task): RedirectResponse
     {
         $this->authorize('delete', $task);

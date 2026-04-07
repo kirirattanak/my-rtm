@@ -55,10 +55,19 @@ watch([filterStatus, filterSprintId], applyFilters);
                     <h1 class="text-xl font-semibold text-slate-900">Tasks</h1>
                     <p class="text-sm text-slate-500 mt-0.5">All tasks for {{ project.name }}.</p>
                 </div>
-                <Link v-if="can.create" :href="route('projects.tasks.create', project.id)"
-                    class="bg-primary text-primary-foreground text-sm font-medium px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">
-                    New Task
-                </Link>
+                <div class="flex items-center gap-2">
+                    <Link :href="route('projects.tasks.gantt', project.id)"
+                        class="inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        Gantt
+                    </Link>
+                    <Link v-if="can.create" :href="route('projects.tasks.create', project.id)"
+                        class="bg-primary text-primary-foreground text-sm font-medium px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">
+                        New Task
+                    </Link>
+                </div>
             </div>
 
             <!-- Filters -->
