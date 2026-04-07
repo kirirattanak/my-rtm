@@ -6,11 +6,13 @@ import { type BreadcrumbItem, type Paginator, type SelectOption, type TaskListIt
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
+
 const props = defineProps<{
     project: { id: number; name: string };
     tasks: Paginator<TaskListItem>;
     sprints: SelectOption[];
-    filters: { status?: string; sprint_id?: string };
+    filters: { search?: string; status?: string; sprint_id?: string };
     can: { create: boolean };
 }>();
 
@@ -20,17 +22,28 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Tasks', href: '#' },
 ];
 
+const filterSearch   = ref(props.filters.search ?? '');
 const filterStatus   = ref(props.filters.status ?? '');
 const filterSprintId = ref(props.filters.sprint_id ?? '');
 
-// Debounce-free: fire on change
-watch([filterStatus, filterSprintId], () => {
+function applyFilters() {
     router.get(
         route('projects.tasks.index', props.project.id),
-        { status: filterStatus.value || undefined, sprint_id: filterSprintId.value || undefined },
+        {
+            search:    filterSearch.value || undefined,
+            status:    filterStatus.value || undefined,
+            sprint_id: filterSprintId.value || undefined,
+        },
         { preserveScroll: true, replace: true },
     );
+}
+
+// Debounce search input, instant for selects
+watch(filterSearch, () => {
+    if (searchTimer) clearTimeout(searchTimer);
+    searchTimer = setTimeout(applyFilters, 350);
 });
+watch([filterStatus, filterSprintId], applyFilters);
 </script>
 
 <template>
@@ -50,6 +63,14 @@ watch([filterStatus, filterSprintId], () => {
 
             <!-- Filters -->
             <div class="flex items-center gap-3">
+                <div class="relative">
+                    <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none"
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input v-model="filterSearch" type="text" placeholder="Search tasks…"
+                        class="pl-8 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg w-56 focus:outline-none focus:ring-2 focus:ring-primary/40" />
+                </div>
                 <select v-model="filterStatus"
                     class="border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40">
                     <option value="">All statuses</option>

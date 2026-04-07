@@ -20,6 +20,7 @@ class TaskController extends Controller
 
         $tasks = $project->tasks()
             ->with(['assignee:id,name', 'sprint:id,name'])
+            ->when($request->search, fn ($q, $v) => $q->where('title', 'like', "%{$v}%"))
             ->when($request->status, fn ($q, $v) => $q->where('status', $v))
             ->when($request->sprint_id, fn ($q, $v) => $v === 'none' ? $q->whereNull('sprint_id') : $q->where('sprint_id', $v))
             ->orderByRaw("CASE status WHEN 'done' THEN 1 WHEN 'cancelled' THEN 2 ELSE 0 END")
@@ -44,7 +45,7 @@ class TaskController extends Controller
             'project' => $project->only('id', 'name'),
             'tasks'   => $tasks,
             'sprints' => $sprints->map(fn ($s) => ['value' => (string) $s->id, 'label' => $s->name]),
-            'filters' => $request->only('status', 'sprint_id'),
+            'filters' => $request->only('search', 'status', 'sprint_id'),
             'can'     => [
                 'create' => $request->user()->can('create', [Task::class, $project]),
             ],

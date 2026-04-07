@@ -124,13 +124,14 @@ function onTypeChange() {
                 <label class="block text-[10px] font-medium text-slate-500 mb-1">Item</label>
                 <select v-model="addId"
                     class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40">
-                    <option value="">— Select —</option>
+                    <option v-if="filteredOptions.length === 0" value="" disabled>
+                        {{ poolFor(addType).length > 0 ? 'All linked or no match' : 'None available' }}
+                    </option>
+                    <option v-else value="">— Select —</option>
                     <option v-for="opt in filteredOptions" :key="opt.value" :value="opt.value">
                         {{ opt.label }}
                     </option>
                 </select>
-                <p v-if="filteredOptions.length === 0 && poolFor(addType).length > 0"
-                    class="text-[10px] text-slate-400 mt-0.5">All items already linked or no match.</p>
             </div>
 
             <!-- Add button -->
