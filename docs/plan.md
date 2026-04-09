@@ -165,6 +165,97 @@ The RTM application is developed across 7 milestones, each building on the previ
 
 ---
 
+## Milestone 8 — Code Quality & Hardening
+
+**Goal:** Address accumulated technical debt across the codebase to improve maintainability, reliability, performance, and security.
+
+---
+
+### 8.1 — Form Request Extraction & Validation Standardization
+
+**Problem:** Validation is duplicated inline across 14+ controllers using repetitive `request->validate()` calls. The pattern `'required|in:' . implode(',', EnumClass::values())` appears 20+ times.
+
+**Tasks:**
+- Create Form Request classes for all resource types: `BusinessRequirementRequest`, `TechnicalRequirementRequest`, `TaskRequest`, `TestCaseRequest`, `TestRunRequest`, `SprintRequest`, `CommentRequest`
+- Standardize enum validation to use `Rule::in(EnumClass::values())` throughout
+- Move shared validation rules into base request classes where appropriate
+
+---
+
+### 8.2 — Resource/Presenter Layer
+
+**Problem:** Data transformation logic is scattered across controllers with nearly identical `->map()` chains. `TaskController::show` and `SprintController::taskData()` are near-duplicates; similar patterns repeat in `ProjectController`, `BusinessRequirementController`, `TestCaseController`, and `TechnicalRequirementController`.
+
+**Tasks:**
+- Create Laravel API Resource classes: `BusinessRequirementResource`, `TechnicalRequirementResource`, `TaskResource`, `TestCaseResource`, `SprintResource`
+- Replace all inline `->map()` / `->through()` transformation chains with Resource classes
+- Ensure consistent response shape across index and show endpoints
+
+---
+
+### 8.3 — Authorization via Policies
+
+**Problem:** Authorization is largely absent or handled with ad-hoc inline checks. `CommentController` has a single manual role check instead of a Policy. Link controllers (`TrLinkController`, `TcLinkController`) do not validate cross-project resource access.
+
+**Tasks:**
+- Create Policy classes for all major resources: `BusinessRequirementPolicy`, `TechnicalRequirementPolicy`, `TaskPolicy`, `TestCasePolicy`, `CommentPolicy`, `SprintPolicy`
+- Register policies in `AuthServiceProvider`
+- Replace all manual `abort(403)` / role checks with `$this->authorize()` calls
+- Add cross-project scope validation to link controllers (ensure linked resources belong to the same project)
+
+---
+
+### 8.4 — Activity Logging via Observers
+
+**Problem:** Activity logging is inconsistent — some models use Observers (e.g. `BusinessRequirementObserver`) while others manually create `ActivityLog` records inside controllers (`CommentController`, `TaskLogController`).
+
+**Tasks:**
+- Audit all manual `ActivityLog::create()` calls in controllers
+- Create or extend Observers for all models that require activity tracking
+- Remove manual activity log creation from controllers
+
+---
+
+### 8.5 — Performance: Query Optimization & Database Indexes
+
+**Problem:** Several controllers have N+1 query risks due to nested `.map()` chains doing collection filtering after eager loading (`CoverageController`, `RtmController`, `ProjectController`). Key columns lack database indexes.
+
+**Tasks:**
+- Add database indexes on `project_id`, `assignee_id`, `created_by`, and `status` columns across all relevant tables via new migrations
+- Refactor `CoverageController`, `RtmController`, and `ProjectController` activity query to use eager loading with conditions or move logic to model scopes
+- Add foreign key constraints to `task_links` table for `linkable_id`
+
+---
+
+### 8.6 — Error Handling
+
+**Problem:** Zero try/catch blocks exist in any controller. No structured error responses for edge cases.
+
+**Tasks:**
+- Add exception handling to link controllers (`TrLinkController`, `TcLinkController`) for invalid or not-found resource requests
+- Register a global exception handler in `app/Exceptions/Handler.php` to return consistent JSON error responses for API-like routes
+- Handle `ModelNotFoundException` and `AuthorizationException` with appropriate HTTP responses
+
+---
+
+### 8.7 — Test Coverage
+
+**Problem:** Only ~18% of PHP files are tested. Auth and Settings are the only covered areas. Zero tests exist for the core application controllers (Projects, Requirements, Tasks, Test Cases, Sprints, RTM, Coverage).
+
+**Tasks:**
+- Add Feature tests for all CRUD operations on: `BusinessRequirement`, `TechnicalRequirement`, `Task`, `TestCase`, `TestRun`, `Sprint`
+- Add Feature tests for traceability link controllers (`TrLinkController`, `TcLinkController`, `BrLinkController`)
+- Add Feature tests for `CoverageController` and `RtmController`
+- Add Policy unit tests for all new Policy classes
+- Add Form Request unit tests for validation rules
+- Target minimum 70% feature test coverage for all controllers
+
+### Access Rules
+- No user-visible changes; all improvements are internal
+- Existing access rules from Milestones 1–7 remain unchanged
+
+---
+
 ## Delivery Notes
 
 - Each milestone must be fully functional before the next begins
