@@ -9,6 +9,7 @@ use App\Enums\TaskStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Projects\TaskRequest;
 use App\Http\Requests\Projects\TaskStatusRequest;
+use App\Http\Resources\TaskResource;
 use App\Models\Project;
 use App\Models\Task;
 use Illuminate\Http\RedirectResponse;
@@ -30,24 +31,7 @@ class TaskController extends Controller
             ->orderByRaw("CASE status WHEN 'done' THEN 1 WHEN 'cancelled' THEN 2 ELSE 0 END")
             ->orderBy('due_date')
             ->paginate(25)
-            ->through(fn ($t) => [
-                'id'                => $t->id,
-                'title'             => $t->title,
-                'status'            => $t->status->value,
-                'status_label'      => $t->status->label(),
-                'priority'          => $t->priority->value,
-                'priority_label'    => $t->priority->label(),
-                'category'          => $t->category?->value,
-                'category_label'    => $t->category?->label(),
-                'effort_estimate'   => $t->effort_estimate,
-                'effort_unit'       => $t->effort_unit->value,
-                'effort_unit_short' => $t->effort_unit->shortLabel(),
-                'due_date'          => $t->due_date?->toDateString(),
-                'start_date'        => $t->start_date?->toDateString(),
-                'end_date'          => $t->end_date?->toDateString(),
-                'assignee'          => $t->assignee ? ['id' => $t->assignee->id, 'name' => $t->assignee->name] : null,
-                'sprint'            => $t->sprint ? ['id' => $t->sprint->id, 'name' => $t->sprint->name] : null,
-            ]);
+            ->through(fn ($t) => TaskResource::list($t));
 
         $sprints = $project->sprints()->orderBy('start_date')->get(['id', 'name']);
 
@@ -118,41 +102,7 @@ class TaskController extends Controller
 
         return Inertia::render('projects/tasks/Show', [
             'project' => $project->only('id', 'name'),
-            'task'    => [
-                'id'                => $task->id,
-                'title'             => $task->title,
-                'description'       => $task->description,
-                'status'            => $task->status->value,
-                'status_label'      => $task->status->label(),
-                'priority'          => $task->priority->value,
-                'priority_label'    => $task->priority->label(),
-                'category'          => $task->category?->value,
-                'category_label'    => $task->category?->label(),
-                'effort_estimate'   => $task->effort_estimate,
-                'effort_unit'       => $task->effort_unit->value,
-                'effort_unit_label' => $task->effort_unit->label(),
-                'effort_unit_short' => $task->effort_unit->shortLabel(),
-                'due_date'          => $task->due_date?->toDateString(),
-                'start_date'        => $task->start_date?->toDateString(),
-                'end_date'          => $task->end_date?->toDateString(),
-                'assignee'          => $task->assignee ? ['id' => $task->assignee->id, 'name' => $task->assignee->name] : null,
-                'sprint'            => $task->sprint ? ['id' => $task->sprint->id, 'name' => $task->sprint->name] : null,
-                'creator'           => $task->creator,
-                'created_at'        => $task->created_at->toDateString(),
-                'completed_at'      => $task->completed_at?->toDateString(),
-                'logged_hours'      => $task->totalLoggedHours(),
-                'effective_actual'  => $task->effectiveActualHours(),
-                'linked_brs'        => $task->linkedBrs->map(fn ($br) => ['id' => $br->id, 'ref' => $br->ref, 'title' => $br->title]),
-                'linked_trs'        => $task->linkedTrs->map(fn ($tr) => ['id' => $tr->id, 'ref' => $tr->ref, 'title' => $tr->title]),
-                'linked_tcs'        => $task->linkedTcs->map(fn ($tc) => ['id' => $tc->id, 'ref' => $tc->ref, 'title' => $tc->title]),
-                'logs'              => $task->logs->map(fn ($log) => [
-                    'id'          => $log->id,
-                    'hours'       => $log->hours,
-                    'notes'       => $log->notes,
-                    'logger_name' => $log->logger->name,
-                    'created_at'  => $log->created_at->toDateString(),
-                ]),
-            ],
+            'task'    => TaskResource::detail($task),
             'can' => [
                 'edit'     => $request->user()->can('update', $task),
                 'delete'   => $request->user()->can('delete', $task),
@@ -256,18 +206,7 @@ class TaskController extends Controller
         $tasks = $project->tasks()
             ->with(['assignee:id,name'])
             ->get()
-            ->map(fn ($t) => [
-                'id'             => $t->id,
-                'title'          => $t->title,
-                'status'         => $t->status->value,
-                'status_label'   => $t->status->label(),
-                'priority'       => $t->priority->value,
-                'priority_label' => $t->priority->label(),
-                'category'       => $t->category?->value,
-                'category_label' => $t->category?->label(),
-                'due_date'       => $t->due_date?->toDateString(),
-                'assignee'       => $t->assignee ? ['id' => $t->assignee->id, 'name' => $t->assignee->name] : null,
-            ]);
+            ->map(fn ($t) => TaskResource::calendarItem($t));
 
         return Inertia::render('projects/tasks/Calendar', [
             'project' => $project->only('id', 'name'),
@@ -284,19 +223,7 @@ class TaskController extends Controller
             ->orderByRaw('start_date IS NULL, start_date')
             ->orderByRaw('due_date IS NULL, due_date')
             ->get()
-            ->map(fn ($t) => [
-                'id'            => $t->id,
-                'title'         => $t->title,
-                'status'        => $t->status->value,
-                'status_label'  => $t->status->label(),
-                'priority'      => $t->priority->value,
-                'priority_label'=> $t->priority->label(),
-                'start_date'    => $t->start_date?->toDateString(),
-                'end_date'      => $t->end_date?->toDateString(),
-                'due_date'      => $t->due_date?->toDateString(),
-                'assignee'      => $t->assignee ? ['id' => $t->assignee->id, 'name' => $t->assignee->name] : null,
-                'sprint'        => $t->sprint ? ['id' => $t->sprint->id, 'name' => $t->sprint->name] : null,
-            ]);
+            ->map(fn ($t) => TaskResource::ganttItem($t));
 
         return Inertia::render('projects/tasks/Gantt', [
             'project' => $project->only('id', 'name'),

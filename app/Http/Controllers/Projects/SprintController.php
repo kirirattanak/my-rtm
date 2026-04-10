@@ -6,6 +6,8 @@ use App\Enums\EffortUnit;
 use App\Enums\TaskStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Projects\SprintRequest;
+use App\Http\Resources\SprintResource;
+use App\Http\Resources\TaskResource;
 use App\Models\Project;
 use App\Models\Sprint;
 use Carbon\CarbonPeriod;
@@ -24,7 +26,7 @@ class SprintController extends Controller
             ->withCount('tasks')
             ->orderBy('start_date')
             ->paginate(20)
-            ->through(fn ($s) => $this->sprintSummary($s));
+            ->through(fn ($s) => SprintResource::summary($s));
 
         return Inertia::render('projects/sprints/Index', [
             'project' => $project->only('id', 'name'),
@@ -99,7 +101,7 @@ class SprintController extends Controller
                 'end_date'   => $sprint->end_date->toDateString(),
                 'capacity'   => $sprint->capacity,
                 'is_active'  => $sprint->isActive(),
-                'tasks'      => $sprint->tasks->map(fn ($t) => $this->taskData($t)),
+                'tasks'      => $sprint->tasks->map(fn ($t) => TaskResource::sprintItem($t)),
             ],
             'workload'   => $workload,
             'burndown'   => $burndown,
@@ -149,37 +151,6 @@ class SprintController extends Controller
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
-
-    private function sprintSummary(Sprint $sprint): array
-    {
-        return [
-            'id'          => $sprint->id,
-            'name'        => $sprint->name,
-            'start_date'  => $sprint->start_date->toDateString(),
-            'end_date'    => $sprint->end_date->toDateString(),
-            'capacity'    => $sprint->capacity,
-            'is_active'   => $sprint->isActive(),
-            'tasks_count' => $sprint->tasks_count,
-        ];
-    }
-
-    private function taskData(\App\Models\Task $task): array
-    {
-        return [
-            'id'              => $task->id,
-            'title'           => $task->title,
-            'status'          => $task->status->value,
-            'status_label'    => $task->status->label(),
-            'effort_estimate' => $task->effort_estimate,
-            'effort_unit'     => $task->effort_unit->value,
-            'effort_unit_short' => $task->effort_unit->shortLabel(),
-            'due_date'        => $task->due_date?->toDateString(),
-            'assignee'        => $task->assignee ? ['id' => $task->assignee->id, 'name' => $task->assignee->name] : null,
-            'logged_hours'    => $task->totalLoggedHours(),
-            'effective_actual'=> $task->effectiveActualHours(),
-            'completed_at'    => $task->completed_at?->toDateString(),
-        ];
-    }
 
     private function buildBurndown(Sprint $sprint): array
     {

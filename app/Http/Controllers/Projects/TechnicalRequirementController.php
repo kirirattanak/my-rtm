@@ -7,6 +7,7 @@ use App\Enums\TrType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Projects\ImportFileRequest;
 use App\Http\Requests\Projects\TechnicalRequirementRequest;
+use App\Http\Resources\TechnicalRequirementResource;
 use App\Models\Project;
 use App\Models\TechnicalRequirement;
 use Illuminate\Http\RedirectResponse;
@@ -25,20 +26,7 @@ class TechnicalRequirementController extends Controller
             ->withCount('businessRequirements')
             ->orderBy('number')
             ->paginate(25)
-            ->through(fn ($tr) => [
-                'id'           => $tr->id,
-                'ref'          => $tr->ref,
-                'number'       => $tr->number,
-                'title'        => $tr->title,
-                'type'         => $tr->type->value,
-                'type_label'   => $tr->type->label(),
-                'status'       => $tr->status->value,
-                'status_label' => $tr->status->label(),
-                'status_color' => $tr->status->color(),
-                'creator'      => $tr->creator,
-                'br_count'     => $tr->business_requirements_count,
-                'created_at'   => $tr->created_at,
-            ]);
+            ->through(fn ($tr) => TechnicalRequirementResource::list($tr));
 
         return Inertia::render('projects/requirements/TrIndex', [
             'project' => $project->only('id', 'name'),
@@ -98,52 +86,7 @@ class TechnicalRequirementController extends Controller
 
         return Inertia::render('projects/requirements/TrShow', [
             'project' => $project->only('id', 'name'),
-            'tr'      => [
-                'id'           => $tr->id,
-                'ref'          => $tr->ref,
-                'number'       => $tr->number,
-                'title'        => $tr->title,
-                'description'  => $tr->description,
-                'type'         => $tr->type->value,
-                'type_label'   => $tr->type->label(),
-                'status'       => $tr->status->value,
-                'status_label' => $tr->status->label(),
-                'status_color' => $tr->status->color(),
-                'creator'      => $tr->creator,
-                'created_at'   => $tr->created_at,
-                'updated_at'   => $tr->updated_at,
-                'business_requirements' => $tr->businessRequirements->map(fn ($br) => [
-                    'id'             => $br->id,
-                    'ref'            => $br->ref,
-                    'title'          => $br->title,
-                    'status'         => $br->status->value,
-                    'status_label'   => $br->status->label(),
-                    'status_color'   => $br->status->color(),
-                    'priority'       => $br->priority->value,
-                    'priority_label' => $br->priority->label(),
-                    'priority_color' => $br->priority->color(),
-                ]),
-                'test_cases' => $tr->testCases->map(fn ($tc) => [
-                    'id'             => $tc->id,
-                    'ref'            => $tc->ref,
-                    'title'          => $tc->title,
-                    'type'           => $tc->type->value,
-                    'type_label'     => $tc->type->label(),
-                    'priority'       => $tc->priority->value,
-                    'priority_label' => $tc->priority->label(),
-                    'status'         => $tc->status->value,
-                    'status_label'   => $tc->status->label(),
-                    'status_color'   => $tc->status->color(),
-                    'assignee'       => $tc->assignee,
-                    'latest_run'     => $tc->runs->first()?->status?->value,
-                ]),
-                'comments' => $tr->comments->map(fn ($c) => [
-                    'id'         => $c->id,
-                    'body'       => $c->body,
-                    'user'       => $c->user,
-                    'created_at' => $c->created_at,
-                ]),
-            ],
+            'tr'      => TechnicalRequirementResource::detail($tr),
             'can' => [
                 'edit'   => $request->user()->can('update', $tr),
                 'delete' => $request->user()->can('delete', $tr),

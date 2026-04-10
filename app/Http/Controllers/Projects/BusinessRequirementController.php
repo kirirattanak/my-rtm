@@ -7,6 +7,7 @@ use App\Enums\RequirementStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Projects\BusinessRequirementRequest;
 use App\Http\Requests\Projects\ImportFileRequest;
+use App\Http\Resources\BusinessRequirementResource;
 use App\Models\BusinessRequirement;
 use App\Models\Project;
 use Illuminate\Http\RedirectResponse;
@@ -25,22 +26,7 @@ class BusinessRequirementController extends Controller
             ->withCount('technicalRequirements')
             ->orderBy('number')
             ->paginate(25)
-            ->through(fn ($br) => [
-                'id'             => $br->id,
-                'ref'            => $br->ref,
-                'number'         => $br->number,
-                'title'          => $br->title,
-                'priority'       => $br->priority->value,
-                'priority_label' => $br->priority->label(),
-                'priority_color' => $br->priority->color(),
-                'status'         => $br->status->value,
-                'status_label'   => $br->status->label(),
-                'status_color'   => $br->status->color(),
-                'category'       => $br->category,
-                'creator'        => $br->creator,
-                'tr_count'       => $br->technical_requirements_count,
-                'created_at'     => $br->created_at,
-            ]);
+            ->through(fn ($br) => BusinessRequirementResource::list($br));
 
         return Inertia::render('projects/requirements/BrIndex', [
             'project' => $project->only('id', 'name'),
@@ -111,40 +97,7 @@ class BusinessRequirementController extends Controller
         return Inertia::render('projects/requirements/BrShow', [
             'project'     => $project->only('id', 'name'),
             'linkable_trs' => $linkableTrs,
-            'br'          => [
-                'id'             => $br->id,
-                'ref'            => $br->ref,
-                'number'         => $br->number,
-                'title'          => $br->title,
-                'description'    => $br->description,
-                'priority'       => $br->priority->value,
-                'priority_label' => $br->priority->label(),
-                'priority_color' => $br->priority->color(),
-                'status'         => $br->status->value,
-                'status_label'   => $br->status->label(),
-                'status_color'   => $br->status->color(),
-                'category'       => $br->category,
-                'tags'           => $br->tags ?? [],
-                'creator'        => $br->creator,
-                'created_at'     => $br->created_at,
-                'updated_at'     => $br->updated_at,
-                'technical_requirements' => $br->technicalRequirements->map(fn ($tr) => [
-                    'id'          => $tr->id,
-                    'ref'         => $tr->ref,
-                    'title'       => $tr->title,
-                    'status'      => $tr->status->value,
-                    'status_label' => $tr->status->label(),
-                    'status_color' => $tr->status->color(),
-                    'type'        => $tr->type->value,
-                    'type_label'  => $tr->type->label(),
-                ]),
-                'comments' => $br->comments->map(fn ($c) => [
-                    'id'         => $c->id,
-                    'body'       => $c->body,
-                    'user'       => $c->user,
-                    'created_at' => $c->created_at,
-                ]),
-            ],
+            'br'          => BusinessRequirementResource::detail($br),
             'can' => [
                 'edit'   => $request->user()->can('update', $br),
                 'delete' => $request->user()->can('delete', $br),

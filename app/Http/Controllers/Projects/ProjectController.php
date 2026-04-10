@@ -6,6 +6,7 @@ use App\Enums\ProjectStatus;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Projects\ProjectRequest;
+use App\Http\Resources\ProjectResource;
 use App\Models\Project;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,18 +25,7 @@ class ProjectController extends Controller
             ->withCount('projectMembers')
             ->orderBy('name')
             ->paginate(20)
-            ->through(fn (Project $p) => [
-                'id'             => $p->id,
-                'name'           => $p->name,
-                'description'    => $p->description,
-                'status'         => $p->status->value,
-                'status_label'   => $p->status->label(),
-                'status_color'   => $p->status->color(),
-                'owner'          => $p->owner->name,
-                'start_date'     => $p->start_date?->toDateString(),
-                'target_date'    => $p->target_date?->toDateString(),
-                'members_count'  => $p->project_members_count,
-            ]);
+            ->through(fn (Project $p) => ProjectResource::list($p));
 
         return Inertia::render('projects/Index', [
             'projects' => $projects,
