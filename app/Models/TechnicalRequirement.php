@@ -64,4 +64,9 @@ class TechnicalRequirement extends Model
     {
         return 'TR-' . str_pad($this->number, 3, '0', STR_PAD_LEFT);
     }
+
+    public function getShowUrl(): string
+    {
+        return route('projects.requirements.technical.show', [$this->project_id, $this->id]);
+    }
 }

@@ -28,10 +28,17 @@ class TechnicalRequirementController extends Controller
             ->paginate(25)
             ->through(fn ($tr) => TechnicalRequirementResource::list($tr));
 
+        $statusCounts = $project->technicalRequirements()
+            ->selectRaw('status, count(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
+
         return Inertia::render('projects/requirements/TrIndex', [
-            'project' => $project->only('id', 'name'),
-            'trs'     => $trs,
-            'can'     => [
+            'project'      => $project->only('id', 'name'),
+            'trs'          => $trs,
+            'statusCounts' => $statusCounts,
+            'can'          => [
                 'create' => $request->user()->can('create', [TechnicalRequirement::class, $project]),
             ],
         ]);

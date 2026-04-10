@@ -208,6 +208,13 @@ function coverageColor(pct: number) {
                     <h1 class="text-xl font-semibold text-slate-900">Requirements Traceability Matrix</h1>
                     <p class="text-sm text-slate-500 mt-0.5">Full BR → TR → Test Case traceability for {{ project.name }}.</p>
                 </div>
+                <a
+                    v-if="can.export"
+                    :href="route('projects.rtm.export', project.id)"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition"
+                >
+                    Export CSV
+                </a>
             </div>
 
             <!-- Coverage summary cards -->
