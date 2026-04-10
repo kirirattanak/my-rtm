@@ -13,4 +13,5 @@ require __DIR__.'/projects.php';
 require __DIR__.'/requirements.php';
 require __DIR__.'/test-cases.php';
 require __DIR__.'/capacity.php';
+require __DIR__.'/notifications.php';
 require __DIR__.'/auth.php';

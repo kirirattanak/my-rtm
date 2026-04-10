@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\BrPriority;
 use App\Enums\RequirementStatus;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -11,6 +12,8 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class BusinessRequirement extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'project_id',
         'number',
@@ -57,5 +60,10 @@ class BusinessRequirement extends Model
     public function getRefAttribute(): string
     {
         return 'BR-' . str_pad($this->number, 3, '0', STR_PAD_LEFT);
+    }
+
+    public function getShowUrl(): string
+    {
+        return route('projects.requirements.business.show', [$this->project_id, $this->id]);
     }
 }

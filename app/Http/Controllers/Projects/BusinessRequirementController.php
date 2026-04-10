@@ -28,10 +28,17 @@ class BusinessRequirementController extends Controller
             ->paginate(25)
             ->through(fn ($br) => BusinessRequirementResource::list($br));
 
+        $statusCounts = $project->businessRequirements()
+            ->selectRaw('status, count(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
+
         return Inertia::render('projects/requirements/BrIndex', [
-            'project' => $project->only('id', 'name'),
-            'brs'     => $brs,
-            'can'     => [
+            'project'      => $project->only('id', 'name'),
+            'brs'          => $brs,
+            'statusCounts' => $statusCounts,
+            'can'          => [
                 'create' => $request->user()->can('create', [BusinessRequirement::class, $project]),
             ],
         ]);

@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\Project;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -64,6 +65,9 @@ class HandleInertiaRequests extends Middleware
                 'success' => $request->session()->get('success'),
                 'error'   => $request->session()->get('error'),
             ],
+            'unreadNotificationsCount' => $request->user()
+                ? $request->user()->unreadNotifications()->count()
+                : 0,
         ]);
     }
 }

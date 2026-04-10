@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\ActivityLog;
 use App\Models\Comment;
+use App\Notifications\CommentAddedNotification;
 use Illuminate\Support\Facades\Auth;
 
 class CommentObserver
@@ -23,5 +24,26 @@ class CommentObserver
             'action'       => 'commented',
             'data'         => ['title' => $commentable->title],
         ]);
+
+        // Notify the creator of the commented-on resource (if different from the commenter)
+        if (
+            isset($commentable->created_by) &&
+            $commentable->created_by &&
+            $commentable->created_by !== Auth::id()
+        ) {
+            $creator = $commentable->creator;
+            if ($creator) {
+                $subjectUrl = method_exists($commentable, 'getShowUrl')
+                    ? $commentable->getShowUrl()
+                    : url('/');
+
+                $creator->notify(new CommentAddedNotification(
+                    $comment,
+                    Auth::user(),
+                    $commentable->title,
+                    $subjectUrl,
+                ));
+            }
+        }
     }
 }

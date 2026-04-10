@@ -22,6 +22,7 @@ export interface SharedData {
     auth: Auth;
     currentProject: { id: number; name: string } | null;
     flash: { success: string | null; error: string | null };
+    unreadNotificationsCount: number;
     ziggy: {
         location: string;
         url: string;
@@ -398,3 +399,11 @@ export interface Sprint extends SprintListItem {
 }
 
 export type BreadcrumbItemType = BreadcrumbItem;
+
+export interface AppNotification {
+    id: string;
+    type: string;
+    data: Record<string, unknown>;
+    read_at: string | null;
+    created_at: string;
+}

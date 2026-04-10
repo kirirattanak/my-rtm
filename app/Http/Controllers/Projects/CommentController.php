@@ -37,7 +37,7 @@ class CommentController extends Controller
         return back()->with('success', 'Comment added.');
     }
 
-    public function destroy(Request $request, Comment $comment): RedirectResponse
+    public function destroy(Request $request, Project $project, Comment $comment): RedirectResponse
     {
         $this->authorize('delete', $comment);
 

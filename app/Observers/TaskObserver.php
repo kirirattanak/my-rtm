@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\ActivityLog;
 use App\Models\Task;
+use App\Notifications\TaskAssignedNotification;
 use Illuminate\Support\Facades\Auth;
 
 class TaskObserver
@@ -40,6 +41,15 @@ class TaskObserver
                 'fields' => array_keys($changed),
             ],
         ]);
+
+        // Notify newly assigned user (but not if they assigned it to themselves)
+        if (
+            array_key_exists('assignee_id', $changed) &&
+            $task->assignee_id &&
+            $task->assignee_id !== Auth::id()
+        ) {
+            $task->assignee->notify(new TaskAssignedNotification($task, Auth::user()));
+        }
     }
 
     public function deleted(Task $task): void
