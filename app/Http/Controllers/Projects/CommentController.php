@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Projects;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Projects\CommentRequest;
-use App\Models\ActivityLog;
 use App\Models\BusinessRequirement;
 use App\Models\Comment;
 use App\Models\Project;
@@ -18,19 +17,9 @@ class CommentController extends Controller
     {
         $this->authorize('view', $businessRequirement);
 
-        $data = $request->validated();
-
         $businessRequirement->comments()->create([
             'user_id' => $request->user()->id,
-            'body'    => $data['body'],
-        ]);
-
-        ActivityLog::create([
-            'subject_type' => BusinessRequirement::class,
-            'subject_id'   => $businessRequirement->id,
-            'user_id'      => $request->user()->id,
-            'action'       => 'commented',
-            'data'         => ['title' => $businessRequirement->title],
+            'body'    => $request->validated('body'),
         ]);
 
         return back()->with('success', 'Comment added.');
@@ -40,19 +29,9 @@ class CommentController extends Controller
     {
         $this->authorize('view', $technicalRequirement);
 
-        $data = $request->validated();
-
         $technicalRequirement->comments()->create([
             'user_id' => $request->user()->id,
-            'body'    => $data['body'],
-        ]);
-
-        ActivityLog::create([
-            'subject_type' => TechnicalRequirement::class,
-            'subject_id'   => $technicalRequirement->id,
-            'user_id'      => $request->user()->id,
-            'action'       => 'commented',
-            'data'         => ['title' => $technicalRequirement->title],
+            'body'    => $request->validated('body'),
         ]);
 
         return back()->with('success', 'Comment added.');

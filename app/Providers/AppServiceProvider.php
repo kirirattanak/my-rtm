@@ -6,11 +6,14 @@ use App\Models\BusinessRequirement;
 use App\Models\Comment;
 use App\Models\TechnicalRequirement;
 use App\Models\TestCase;
+use App\Models\TaskLog;
 use App\Observers\BusinessRequirementObserver;
+use App\Observers\CommentObserver;
 use App\Observers\TechnicalRequirementObserver;
 use App\Observers\TestCaseObserver;
 use App\Models\Sprint;
 use App\Models\Task;
+use App\Observers\TaskLogObserver;
 use App\Observers\TaskObserver;
 use App\Policies\CommentPolicy;
 use App\Policies\SprintPolicy;
@@ -34,10 +37,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         BusinessRequirement::observe(BusinessRequirementObserver::class);
+        Comment::observe(CommentObserver::class);
         TechnicalRequirement::observe(TechnicalRequirementObserver::class);
         TestCase::observe(TestCaseObserver::class);
-
         Task::observe(TaskObserver::class);
+        TaskLog::observe(TaskLogObserver::class);
 
         Gate::policy(Comment::class, CommentPolicy::class);
         Gate::policy(Sprint::class, SprintPolicy::class);
