@@ -14,17 +14,20 @@ class CoverageController extends Controller
     {
         $this->authorize('view', $project);
 
-        // Load TRs with their test cases and runs
+        // Load TRs with a boolean flag per test case indicating any passing run exists,
+        // avoiding loading every run row just to check coverage.
         $trs = $project->technicalRequirements()
             ->with([
-                'testCases.runs',
+                'testCases' => fn ($q) => $q->withExists([
+                    'runs as has_passing_run' => fn ($q) => $q->where('status', 'pass'),
+                ]),
                 'businessRequirements:id,number,title,priority,status',
             ])
             ->orderBy('number')
             ->get();
 
         $trRows = $trs->map(function ($tr) {
-            $covered = $tr->testCases->contains(fn ($tc) => $tc->runs->contains('status', 'pass'));
+            $covered = $tr->testCases->contains(fn ($tc) => $tc->has_passing_run);
 
             return [
                 'id'          => $tr->id,

@@ -99,26 +99,29 @@ class ProjectController extends Controller
             'tr_coverage' => $totalTrs ? round((count($coveredTrIds) / $totalTrs) * 100) : 0,
         ];
 
-        // Recent activity
-        $brIds   = $brs->pluck('id');
-        $trIds   = $trs->pluck('id');
-        $tcIds   = $project->testCases()->pluck('id');
-        $taskIds = $project->tasks()->pluck('id');
+        // Recent activity — use already-loaded $brs and $trs ID sets; replace the two
+        // extra pluck() queries for TCs and Tasks with EXISTS subqueries scoped to the project.
+        $brIds = $brs->pluck('id');
+        $trIds = $trs->pluck('id');
 
         $activity = \App\Models\ActivityLog::with('user:id,name')
-            ->where(function ($q) use ($brIds, $trIds, $tcIds, $taskIds) {
+            ->where(function ($q) use ($project, $brIds, $trIds) {
                 $q->where(function ($q) use ($brIds) {
                     $q->where('subject_type', \App\Models\BusinessRequirement::class)
                       ->whereIn('subject_id', $brIds);
                 })->orWhere(function ($q) use ($trIds) {
                     $q->where('subject_type', \App\Models\TechnicalRequirement::class)
                       ->whereIn('subject_id', $trIds);
-                })->orWhere(function ($q) use ($tcIds) {
+                })->orWhere(function ($q) use ($project) {
                     $q->where('subject_type', \App\Models\TestCase::class)
-                      ->whereIn('subject_id', $tcIds);
-                })->orWhere(function ($q) use ($taskIds) {
+                      ->whereIn('subject_id',
+                          \App\Models\TestCase::where('project_id', $project->id)->select('id')
+                      );
+                })->orWhere(function ($q) use ($project) {
                     $q->where('subject_type', \App\Models\Task::class)
-                      ->whereIn('subject_id', $taskIds);
+                      ->whereIn('subject_id',
+                          \App\Models\Task::where('project_id', $project->id)->select('id')
+                      );
                 });
             })
             ->latest()
