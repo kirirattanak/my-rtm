@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\RequirementStatus;
 use App\Enums\TrType;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\TestCase;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,6 +13,8 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class TechnicalRequirement extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'project_id',
         'number',
