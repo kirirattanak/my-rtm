@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Projects;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Projects\CommentRequest;
 use App\Models\ActivityLog;
 use App\Models\BusinessRequirement;
 use App\Models\Comment;
@@ -13,13 +14,11 @@ use Illuminate\Http\Request;
 
 class CommentController extends Controller
 {
-    public function storeBr(Request $request, Project $project, BusinessRequirement $businessRequirement): RedirectResponse
+    public function storeBr(CommentRequest $request, Project $project, BusinessRequirement $businessRequirement): RedirectResponse
     {
         $this->authorize('view', $businessRequirement);
 
-        $data = $request->validate([
-            'body' => 'required|string|max:2000',
-        ]);
+        $data = $request->validated();
 
         $businessRequirement->comments()->create([
             'user_id' => $request->user()->id,
@@ -37,13 +36,11 @@ class CommentController extends Controller
         return back()->with('success', 'Comment added.');
     }
 
-    public function storeTr(Request $request, Project $project, TechnicalRequirement $technicalRequirement): RedirectResponse
+    public function storeTr(CommentRequest $request, Project $project, TechnicalRequirement $technicalRequirement): RedirectResponse
     {
         $this->authorize('view', $technicalRequirement);
 
-        $data = $request->validate([
-            'body' => 'required|string|max:2000',
-        ]);
+        $data = $request->validated();
 
         $technicalRequirement->comments()->create([
             'user_id' => $request->user()->id,

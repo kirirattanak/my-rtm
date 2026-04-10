@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Projects;
 
 use App\Enums\TestRunStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Projects\TestRunRequest;
 use App\Models\Project;
 use App\Models\TestCase;
 use Illuminate\Http\RedirectResponse;
@@ -11,14 +12,11 @@ use Illuminate\Http\Request;
 
 class TestRunController extends Controller
 {
-    public function store(Request $request, Project $project, TestCase $testCase): RedirectResponse
+    public function store(TestRunRequest $request, Project $project, TestCase $testCase): RedirectResponse
     {
         $this->authorize('logRun', $testCase);
 
-        $data = $request->validate([
-            'status' => 'required|in:' . implode(',', TestRunStatus::values()),
-            'notes'  => 'nullable|string|max:1000',
-        ]);
+        $data = $request->validated();
 
         $testCase->runs()->create([
             'executed_by' => $request->user()->id,

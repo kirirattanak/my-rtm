@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Projects;
 use App\Enums\BrPriority;
 use App\Enums\RequirementStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Projects\BusinessRequirementRequest;
+use App\Http\Requests\Projects\ImportFileRequest;
 use App\Models\BusinessRequirement;
 use App\Models\Project;
 use Illuminate\Http\RedirectResponse;
@@ -66,19 +68,11 @@ class BusinessRequirementController extends Controller
         ]);
     }
 
-    public function store(Request $request, Project $project): RedirectResponse
+    public function store(BusinessRequirementRequest $request, Project $project): RedirectResponse
     {
         $this->authorize('create', [BusinessRequirement::class, $project]);
 
-        $data = $request->validate([
-            'title'       => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'priority'    => 'required|in:' . implode(',', BrPriority::values()),
-            'status'      => 'required|in:' . implode(',', RequirementStatus::values()),
-            'category'    => 'nullable|string|max:100',
-            'tags'        => 'nullable|array',
-            'tags.*'      => 'string|max:50',
-        ]);
+        $data = $request->validated();
 
         $number = ($project->businessRequirements()->max('number') ?? 0) + 1;
 
@@ -185,19 +179,11 @@ class BusinessRequirementController extends Controller
         ]);
     }
 
-    public function update(Request $request, Project $project, BusinessRequirement $businessRequirement): RedirectResponse
+    public function update(BusinessRequirementRequest $request, Project $project, BusinessRequirement $businessRequirement): RedirectResponse
     {
         $this->authorize('update', $businessRequirement);
 
-        $data = $request->validate([
-            'title'       => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'priority'    => 'required|in:' . implode(',', BrPriority::values()),
-            'status'      => 'required|in:' . implode(',', RequirementStatus::values()),
-            'category'    => 'nullable|string|max:100',
-            'tags'        => 'nullable|array',
-            'tags.*'      => 'string|max:50',
-        ]);
+        $data = $request->validated();
 
         $businessRequirement->update($data);
 
@@ -225,11 +211,9 @@ class BusinessRequirementController extends Controller
         ]);
     }
 
-    public function import(Request $request, Project $project): RedirectResponse
+    public function import(ImportFileRequest $request, Project $project): RedirectResponse
     {
         $this->authorize('create', [BusinessRequirement::class, $project]);
-
-        $request->validate(['file' => 'required|file|mimes:csv,txt|max:5120']);
 
         $handle = fopen($request->file('file')->getPathname(), 'r');
         $rawHeader = fgetcsv($handle);

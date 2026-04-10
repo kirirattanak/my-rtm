@@ -7,6 +7,8 @@ use App\Enums\EffortUnit;
 use App\Enums\TaskCategory;
 use App\Enums\TaskStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Projects\TaskRequest;
+use App\Http\Requests\Projects\TaskStatusRequest;
 use App\Models\Project;
 use App\Models\Task;
 use Illuminate\Http\RedirectResponse;
@@ -78,30 +80,11 @@ class TaskController extends Controller
         ]);
     }
 
-    public function store(Request $request, Project $project): RedirectResponse
+    public function store(TaskRequest $request, Project $project): RedirectResponse
     {
         $this->authorize('create', [Task::class, $project]);
 
-        $data = $request->validate([
-            'title'           => 'required|string|max:255',
-            'description'     => 'nullable|string',
-            'sprint_id'       => 'nullable|exists:sprints,id',
-            'effort_estimate' => 'nullable|numeric|min:0',
-            'effort_unit'     => 'required|in:' . implode(',', EffortUnit::values()),
-            'status'          => 'required|in:' . implode(',', TaskStatus::values()),
-            'priority'        => 'required|in:' . implode(',', BrPriority::values()),
-            'category'        => 'nullable|in:' . implode(',', TaskCategory::values()),
-            'due_date'        => 'nullable|date',
-            'start_date'      => 'nullable|date',
-            'end_date'        => 'nullable|date|after_or_equal:start_date',
-            'assignee_id'     => 'nullable|exists:users,id',
-            'linked_br_ids'   => 'nullable|array',
-            'linked_br_ids.*' => 'integer|exists:business_requirements,id',
-            'linked_tr_ids'   => 'nullable|array',
-            'linked_tr_ids.*' => 'integer|exists:technical_requirements,id',
-            'linked_tc_ids'   => 'nullable|array',
-            'linked_tc_ids.*' => 'integer|exists:test_cases,id',
-        ]);
+        $data = $request->validated();
 
         $task = $project->tasks()->create([
             'title'           => $data['title'],
@@ -216,30 +199,11 @@ class TaskController extends Controller
         ]);
     }
 
-    public function update(Request $request, Project $project, Task $task): RedirectResponse
+    public function update(TaskRequest $request, Project $project, Task $task): RedirectResponse
     {
         $this->authorize('update', $task);
 
-        $data = $request->validate([
-            'title'           => 'required|string|max:255',
-            'description'     => 'nullable|string',
-            'sprint_id'       => 'nullable|exists:sprints,id',
-            'effort_estimate' => 'nullable|numeric|min:0',
-            'effort_unit'     => 'required|in:' . implode(',', EffortUnit::values()),
-            'status'          => 'required|in:' . implode(',', TaskStatus::values()),
-            'priority'        => 'required|in:' . implode(',', BrPriority::values()),
-            'category'        => 'nullable|in:' . implode(',', TaskCategory::values()),
-            'due_date'        => 'nullable|date',
-            'start_date'      => 'nullable|date',
-            'end_date'        => 'nullable|date|after_or_equal:start_date',
-            'assignee_id'     => 'nullable|exists:users,id',
-            'linked_br_ids'   => 'nullable|array',
-            'linked_br_ids.*' => 'integer|exists:business_requirements,id',
-            'linked_tr_ids'   => 'nullable|array',
-            'linked_tr_ids.*' => 'integer|exists:technical_requirements,id',
-            'linked_tc_ids'   => 'nullable|array',
-            'linked_tc_ids.*' => 'integer|exists:test_cases,id',
-        ]);
+        $data = $request->validated();
 
         $wasDone  = $task->status === TaskStatus::Done;
         $nowDone  = $data['status'] === TaskStatus::Done->value;
@@ -268,13 +232,11 @@ class TaskController extends Controller
             ->with('success', 'Task updated.');
     }
 
-    public function updateStatus(Request $request, Project $project, Task $task): RedirectResponse
+    public function updateStatus(TaskStatusRequest $request, Project $project, Task $task): RedirectResponse
     {
         $this->authorize('update', $task);
 
-        $data = $request->validate([
-            'status' => 'required|in:' . implode(',', TaskStatus::values()),
-        ]);
+        $data = $request->validated();
 
         $wasDone = $task->status === TaskStatus::Done;
         $nowDone = $data['status'] === TaskStatus::Done->value;

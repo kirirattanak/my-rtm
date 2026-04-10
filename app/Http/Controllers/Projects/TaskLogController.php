@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Projects;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Projects\TaskLogRequest;
 use App\Models\ActivityLog;
 use App\Models\Project;
 use App\Models\Task;
@@ -11,14 +12,11 @@ use Illuminate\Http\Request;
 
 class TaskLogController extends Controller
 {
-    public function store(Request $request, Project $project, Task $task): RedirectResponse
+    public function store(TaskLogRequest $request, Project $project, Task $task): RedirectResponse
     {
         $this->authorize('logHours', $task);
 
-        $data = $request->validate([
-            'hours' => 'required|numeric|min:0.1|max:24',
-            'notes' => 'nullable|string|max:500',
-        ]);
+        $data = $request->validated();
 
         $task->logs()->create([
             'logged_by' => $request->user()->id,

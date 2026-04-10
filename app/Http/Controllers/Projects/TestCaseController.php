@@ -6,6 +6,8 @@ use App\Enums\BrPriority;
 use App\Enums\RequirementStatus;
 use App\Enums\TestCaseType;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Projects\ImportFileRequest;
+use App\Http\Requests\Projects\TestCaseRequest;
 use App\Models\Project;
 use App\Models\TestCase;
 use Illuminate\Http\RedirectResponse;
@@ -70,21 +72,11 @@ class TestCaseController extends Controller
         ]);
     }
 
-    public function store(Request $request, Project $project): RedirectResponse
+    public function store(TestCaseRequest $request, Project $project): RedirectResponse
     {
         $this->authorize('create', [TestCase::class, $project]);
 
-        $data = $request->validate([
-            'title'           => 'required|string|max:255',
-            'description'     => 'nullable|string',
-            'steps'           => 'nullable|array',
-            'steps.*'         => 'string|max:500',
-            'expected_result' => 'nullable|string',
-            'type'            => 'required|in:' . implode(',', TestCaseType::values()),
-            'priority'        => 'required|in:' . implode(',', BrPriority::values()),
-            'status'          => 'required|in:' . implode(',', RequirementStatus::values()),
-            'assignee_id'     => 'nullable|exists:users,id',
-        ]);
+        $data = $request->validated();
 
         $number = ($project->testCases()->max('number') ?? 0) + 1;
 
@@ -195,21 +187,11 @@ class TestCaseController extends Controller
         ]);
     }
 
-    public function update(Request $request, Project $project, TestCase $testCase): RedirectResponse
+    public function update(TestCaseRequest $request, Project $project, TestCase $testCase): RedirectResponse
     {
         $this->authorize('update', $testCase);
 
-        $data = $request->validate([
-            'title'           => 'required|string|max:255',
-            'description'     => 'nullable|string',
-            'steps'           => 'nullable|array',
-            'steps.*'         => 'string|max:500',
-            'expected_result' => 'nullable|string',
-            'type'            => 'required|in:' . implode(',', TestCaseType::values()),
-            'priority'        => 'required|in:' . implode(',', BrPriority::values()),
-            'status'          => 'required|in:' . implode(',', RequirementStatus::values()),
-            'assignee_id'     => 'nullable|exists:users,id',
-        ]);
+        $data = $request->validated();
 
         $testCase->update($data);
 
@@ -237,11 +219,9 @@ class TestCaseController extends Controller
         ]);
     }
 
-    public function import(Request $request, Project $project): RedirectResponse
+    public function import(ImportFileRequest $request, Project $project): RedirectResponse
     {
         $this->authorize('create', [TestCase::class, $project]);
-
-        $request->validate(['file' => 'required|file|mimes:csv,txt|max:5120']);
 
         $handle = fopen($request->file('file')->getPathname(), 'r');
         $header = array_map(fn ($h) => strtolower(trim($h)), fgetcsv($handle));

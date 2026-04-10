@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Projects;
 use App\Enums\RequirementStatus;
 use App\Enums\TrType;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Projects\ImportFileRequest;
+use App\Http\Requests\Projects\TechnicalRequirementRequest;
 use App\Models\Project;
 use App\Models\TechnicalRequirement;
 use Illuminate\Http\RedirectResponse;
@@ -64,16 +66,11 @@ class TechnicalRequirementController extends Controller
         ]);
     }
 
-    public function store(Request $request, Project $project): RedirectResponse
+    public function store(TechnicalRequirementRequest $request, Project $project): RedirectResponse
     {
         $this->authorize('create', [TechnicalRequirement::class, $project]);
 
-        $data = $request->validate([
-            'title'       => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'type'        => 'required|in:' . implode(',', TrType::values()),
-            'status'      => 'required|in:' . implode(',', RequirementStatus::values()),
-        ]);
+        $data = $request->validated();
 
         $number = ($project->technicalRequirements()->max('number') ?? 0) + 1;
 
@@ -179,16 +176,11 @@ class TechnicalRequirementController extends Controller
         ]);
     }
 
-    public function update(Request $request, Project $project, TechnicalRequirement $technicalRequirement): RedirectResponse
+    public function update(TechnicalRequirementRequest $request, Project $project, TechnicalRequirement $technicalRequirement): RedirectResponse
     {
         $this->authorize('update', $technicalRequirement);
 
-        $data = $request->validate([
-            'title'       => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'type'        => 'required|in:' . implode(',', TrType::values()),
-            'status'      => 'required|in:' . implode(',', RequirementStatus::values()),
-        ]);
+        $data = $request->validated();
 
         $technicalRequirement->update($data);
 
@@ -216,11 +208,9 @@ class TechnicalRequirementController extends Controller
         ]);
     }
 
-    public function import(Request $request, Project $project): RedirectResponse
+    public function import(ImportFileRequest $request, Project $project): RedirectResponse
     {
         $this->authorize('create', [TechnicalRequirement::class, $project]);
-
-        $request->validate(['file' => 'required|file|mimes:csv,txt|max:5120']);
 
         $handle = fopen($request->file('file')->getPathname(), 'r');
         $header = array_map(fn ($h) => strtolower(trim($h)), fgetcsv($handle));

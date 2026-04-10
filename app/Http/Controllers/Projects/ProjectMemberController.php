@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Projects;
 
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Projects\ProjectMemberRequest;
+use App\Http\Requests\Projects\ProjectMemberRoleRequest;
 use App\Models\Project;
 use App\Models\ProjectMember;
 use App\Models\User;
@@ -44,33 +46,27 @@ class ProjectMemberController extends Controller
         ]);
     }
 
-    public function store(Request $request, Project $project): RedirectResponse
+    public function store(ProjectMemberRequest $request, Project $project): RedirectResponse
     {
         $this->authorize('manageMembers', $project);
 
-        $request->validate([
-            'user_id' => ['required', 'exists:users,id',
-                Rule::unique('project_members')->where('project_id', $project->id)],
-            'role'    => ['required', Rule::in(UserRole::values())],
-        ]);
+        $data = $request->validated();
 
         $project->projectMembers()->create([
-            'user_id' => $request->user_id,
-            'role'    => $request->role,
+            'user_id' => $data['user_id'],
+            'role'    => $data['role'],
         ]);
 
         return back()->with('success', 'Member added.');
     }
 
-    public function update(Request $request, Project $project, ProjectMember $member): RedirectResponse
+    public function update(ProjectMemberRoleRequest $request, Project $project, ProjectMember $member): RedirectResponse
     {
         $this->authorize('manageMembers', $project);
 
-        $request->validate([
-            'role' => ['required', Rule::in(UserRole::values())],
-        ]);
+        $data = $request->validated();
 
-        $member->update(['role' => $request->role]);
+        $member->update(['role' => $data['role']]);
 
         return back()->with('success', 'Member role updated.');
     }

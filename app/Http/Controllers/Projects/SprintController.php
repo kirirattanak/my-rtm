@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Projects;
 use App\Enums\EffortUnit;
 use App\Enums\TaskStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Projects\SprintRequest;
 use App\Models\Project;
 use App\Models\Sprint;
 use Carbon\CarbonPeriod;
@@ -43,16 +44,11 @@ class SprintController extends Controller
         ]);
     }
 
-    public function store(Request $request, Project $project): RedirectResponse
+    public function store(SprintRequest $request, Project $project): RedirectResponse
     {
         $this->authorize('create', [Sprint::class, $project]);
 
-        $data = $request->validate([
-            'name'       => 'required|string|max:255',
-            'start_date' => 'required|date',
-            'end_date'   => 'required|date|after_or_equal:start_date',
-            'capacity'   => 'nullable|numeric|min:0',
-        ]);
+        $data = $request->validated();
 
         $project->sprints()->create($data);
 
@@ -130,16 +126,11 @@ class SprintController extends Controller
         ]);
     }
 
-    public function update(Request $request, Project $project, Sprint $sprint): RedirectResponse
+    public function update(SprintRequest $request, Project $project, Sprint $sprint): RedirectResponse
     {
         $this->authorize('update', $sprint);
 
-        $data = $request->validate([
-            'name'       => 'required|string|max:255',
-            'start_date' => 'required|date',
-            'end_date'   => 'required|date|after_or_equal:start_date',
-            'capacity'   => 'nullable|numeric|min:0',
-        ]);
+        $data = $request->validated();
 
         $sprint->update($data);
 

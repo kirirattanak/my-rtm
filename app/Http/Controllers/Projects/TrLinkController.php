@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Projects;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Projects\LinkTrRequest;
 use App\Models\BusinessRequirement;
 use App\Models\Project;
 use App\Models\TechnicalRequirement;
@@ -14,17 +15,11 @@ class TrLinkController extends Controller
     /**
      * Attach a TR to a BR.
      */
-    public function store(Request $request, Project $project, BusinessRequirement $businessRequirement): RedirectResponse
+    public function store(LinkTrRequest $request, Project $project, BusinessRequirement $businessRequirement): RedirectResponse
     {
         $this->authorize('update', $businessRequirement);
 
-        $data = $request->validate([
-            'technical_requirement_id' => [
-                'required',
-                'integer',
-                'exists:technical_requirements,id',
-            ],
-        ]);
+        $data = $request->validated();
 
         $tr = TechnicalRequirement::where('id', $data['technical_requirement_id'])
             ->where('project_id', $project->id)

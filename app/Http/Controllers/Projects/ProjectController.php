@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Projects;
 use App\Enums\ProjectStatus;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Projects\ProjectRequest;
 use App\Models\Project;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -53,17 +54,11 @@ class ProjectController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(ProjectRequest $request): RedirectResponse
     {
         $this->authorize('create', Project::class);
 
-        $data = $request->validate([
-            'name'        => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'status'      => ['required', Rule::in(ProjectStatus::values())],
-            'start_date'  => ['nullable', 'date'],
-            'target_date' => ['nullable', 'date', 'after_or_equal:start_date'],
-        ]);
+        $data = $request->validated();
 
         $project = Project::create([
             ...$data,
@@ -213,17 +208,11 @@ class ProjectController extends Controller
         ]);
     }
 
-    public function update(Request $request, Project $project): RedirectResponse
+    public function update(ProjectRequest $request, Project $project): RedirectResponse
     {
         $this->authorize('update', $project);
 
-        $data = $request->validate([
-            'name'        => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'status'      => ['required', Rule::in(ProjectStatus::values())],
-            'start_date'  => ['nullable', 'date'],
-            'target_date' => ['nullable', 'date', 'after_or_equal:start_date'],
-        ]);
+        $data = $request->validated();
 
         $project->update($data);
 
