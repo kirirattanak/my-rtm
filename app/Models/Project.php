@@ -89,4 +89,9 @@ class Project extends Model
     {
         return $this->hasMany(Task::class);
     }
+
+    public function testSuites(): HasMany
+    {
+        return $this->hasMany(TestSuite::class);
+    }
 }

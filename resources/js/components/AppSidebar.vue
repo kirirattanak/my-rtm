@@ -5,7 +5,7 @@ import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
-import { BarChart2, ClipboardList, Folder, FlaskConical, GitBranch, Mail, PieChart, SquareKanban, Users, Zap } from 'lucide-vue-next';
+import { BarChart2, ClipboardList, Folder, FlaskConical, GitBranch, Mail, PieChart, SquareKanban, TestTube2, Users, Zap } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from './AppLogo.vue';
 
@@ -60,6 +60,11 @@ const projectNavItems = computed<NavItem[]>(() => {
             title: 'Tasks',
             href: `/projects/${project.id}/tasks`,
             icon: SquareKanban,
+        },
+        {
+            title: 'Test Suites',
+            href: `/projects/${project.id}/test-suites`,
+            icon: TestTube2,
         },
         {
             title: 'Reports',

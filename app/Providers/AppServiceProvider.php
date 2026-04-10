@@ -18,6 +18,8 @@ use App\Observers\TaskObserver;
 use App\Policies\CommentPolicy;
 use App\Policies\SprintPolicy;
 use App\Policies\TaskPolicy;
+use App\Policies\TestSuitePolicy;
+use App\Models\TestSuite;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -46,5 +48,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Comment::class, CommentPolicy::class);
         Gate::policy(Sprint::class, SprintPolicy::class);
         Gate::policy(Task::class, TaskPolicy::class);
+        Gate::policy(TestSuite::class, TestSuitePolicy::class);
     }
 }

@@ -407,3 +407,62 @@ export interface AppNotification {
     read_at: string | null;
     created_at: string;
 }
+
+export interface TestSuiteRun {
+    id: number;
+    status: TestRunStatus;
+    status_label: string;
+    notes: string | null;
+    executor: string;
+    created_at: string;
+}
+
+export interface TestSuiteTestCase {
+    id: number;
+    ref: string;
+    title: string;
+    latest_run: TestRunStatus | null;
+    runs: TestSuiteRun[];
+}
+
+export interface TestSuiteTr {
+    id: number;
+    ref: string;
+    title: string;
+    test_cases: TestSuiteTestCase[];
+}
+
+export interface TestSuiteBr {
+    id: number;
+    ref: string;
+    title: string;
+    trs: TestSuiteTr[];
+}
+
+export interface TestSuiteSummary {
+    total: number;
+    pass: number;
+    fail: number;
+    blocked: number;
+    skipped: number;
+    not_run: number;
+}
+
+export interface TestSuiteDetail {
+    id: number;
+    name: string;
+    description: string | null;
+    creator: string;
+    created_at: string;
+    brs: TestSuiteBr[];
+    summary: TestSuiteSummary;
+}
+
+export interface TestSuiteListItem {
+    id: number;
+    name: string;
+    description: string | null;
+    br_count: number;
+    creator: string;
+    created_at: string;
+}
