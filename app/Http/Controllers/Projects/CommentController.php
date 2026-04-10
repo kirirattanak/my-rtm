@@ -60,9 +60,7 @@ class CommentController extends Controller
 
     public function destroy(Request $request, Comment $comment): RedirectResponse
     {
-        if ($comment->user_id !== $request->user()->id && ! $request->user()->isAdmin()) {
-            abort(403);
-        }
+        $this->authorize('delete', $comment);
 
         $comment->delete();
 

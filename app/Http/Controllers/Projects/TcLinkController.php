@@ -5,10 +5,8 @@ namespace App\Http\Controllers\Projects;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Projects\LinkTrRequest;
 use App\Models\Project;
-use App\Models\TechnicalRequirement;
 use App\Models\TestCase;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 class TcLinkController extends Controller
 {
@@ -18,11 +16,7 @@ class TcLinkController extends Controller
 
         $data = $request->validated();
 
-        $tr = TechnicalRequirement::where('id', $data['technical_requirement_id'])
-            ->where('project_id', $project->id)
-            ->firstOrFail();
-
-        $testCase->technicalRequirements()->syncWithoutDetaching([$tr->id]);
+        $testCase->technicalRequirements()->syncWithoutDetaching([$data['technical_requirement_id']]);
 
         return back()->with('success', 'Technical requirement linked.');
     }
