@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Projects;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Projects\LinkTrRequest;
 use App\Models\Project;
+use App\Models\TechnicalRequirement;
 use App\Models\TestCase;
 use Illuminate\Http\RedirectResponse;
 

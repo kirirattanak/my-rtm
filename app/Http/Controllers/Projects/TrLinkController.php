@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Projects\LinkTrRequest;
 use App\Models\BusinessRequirement;
 use App\Models\Project;
+use App\Models\TechnicalRequirement;
 use Illuminate\Http\RedirectResponse;
 
 class TrLinkController extends Controller
