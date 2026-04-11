@@ -2,11 +2,13 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem, type BusinessRequirement } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 
 const props = defineProps<{
     project: { id: number; name: string };
     br: BusinessRequirement;
     linkable_trs: { id: number; ref: string; title: string }[];
+    linkable_brs: { id: number; ref: string; title: string }[];
     can: { edit: boolean; delete: boolean };
 }>();
 
@@ -65,6 +67,31 @@ function confirmDelete() {
 function unlinkTr(trId: number) {
     router.delete(route('projects.requirements.business.tr-links.destroy', [props.project.id, props.br.id, trId]));
 }
+
+const depForm = useForm({ blocking_br_id: '' });
+const depSearch = ref('');
+
+const filteredLinkableBrs = computed(() => {
+    const q = depSearch.value.toLowerCase();
+    return props.linkable_brs.filter(b =>
+        !q || b.title.toLowerCase().includes(q) || b.ref.toLowerCase().includes(q)
+    );
+});
+
+function addBlocker() {
+    depForm.post(route('projects.requirements.business.dependencies.store', [props.project.id, props.br.id]), {
+        onSuccess: () => { depForm.reset(); depSearch.value = ''; },
+    });
+}
+
+function removeBlocker(blockingBrId: number) {
+    router.delete(route('projects.requirements.business.dependencies.destroy', [props.project.id, props.br.id, blockingBrId]));
+}
+
+function removeDependant(dependantBrId: number) {
+    // Remove this BR as a blocker of dependantBrId — delete from the dependant's perspective
+    router.delete(route('projects.requirements.business.dependencies.destroy', [props.project.id, dependantBrId, props.br.id]));
+}
 </script>
 
 <template>
@@ -75,7 +102,7 @@ function unlinkTr(trId: number) {
             <!-- Header -->
             <div class="flex items-start justify-between">
                 <div class="space-y-2">
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-3 flex-wrap">
                         <span class="font-mono text-sm text-slate-400">{{ br.ref }}</span>
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                             :class="priorityClass[br.priority]">
@@ -84,6 +111,10 @@ function unlinkTr(trId: number) {
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                             :class="statusClass[br.status]">
                             {{ br.status_label }}
+                        </span>
+                        <span v-if="br.is_blocked"
+                            class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
+                            ⚠ Blocked
                         </span>
                     </div>
                     <h1 class="text-xl font-semibold text-slate-900">{{ br.title }}</h1>
@@ -122,6 +153,91 @@ function unlinkTr(trId: number) {
             <div v-if="br.description" class="bg-white rounded-xl border border-slate-200 p-5">
                 <h2 class="text-sm font-medium text-slate-500 mb-2">Description</h2>
                 <div class="prose prose-sm max-w-none text-slate-700" v-html="br.description" />
+            </div>
+
+            <!-- Dependencies -->
+            <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+                    <h2 class="text-sm font-semibold text-slate-700">Dependencies</h2>
+                    <Link :href="route('projects.requirements.business.graph', project.id)"
+                        class="text-xs text-slate-400 hover:text-primary transition">
+                        View graph →
+                    </Link>
+                </div>
+
+                <div class="divide-y divide-slate-100">
+                    <!-- Blocked By (incoming) -->
+                    <div class="px-5 py-3">
+                        <p class="text-xs font-medium text-slate-500 mb-2">Blocked By
+                            <span class="text-slate-400 font-normal">(must be resolved first)</span>
+                        </p>
+
+                        <!-- Add blocker form -->
+                        <div v-if="can.edit && linkable_brs.length" class="flex gap-2 mb-3">
+                            <div class="flex-1">
+                                <input v-model="depSearch" type="text" placeholder="Search BRs…"
+                                    class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40" />
+                            </div>
+                            <div class="flex-1">
+                                <select v-model="depForm.blocking_br_id"
+                                    class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/40">
+                                    <option value="">— Select blocker —</option>
+                                    <option v-for="b in filteredLinkableBrs" :key="b.id" :value="b.id">
+                                        {{ b.ref }} — {{ b.title }}
+                                    </option>
+                                </select>
+                            </div>
+                            <button type="button" :disabled="!depForm.blocking_br_id || depForm.processing"
+                                @click="addBlocker"
+                                class="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-40 flex-shrink-0">
+                                Add
+                            </button>
+                        </div>
+                        <p v-if="depForm.errors.blocking_br_id" class="text-xs text-red-500 mb-2">{{ depForm.errors.blocking_br_id }}</p>
+
+                        <div v-if="br.blocked_by.length === 0" class="text-xs text-slate-400 py-1">None — this BR has no prerequisites.</div>
+                        <div v-else class="space-y-1">
+                            <div v-for="dep in br.blocked_by" :key="dep.id"
+                                class="flex items-center gap-3 py-1">
+                                <Link :href="route('projects.requirements.business.show', [project.id, dep.id])"
+                                    class="font-mono text-xs text-slate-400 hover:text-primary transition w-16 flex-shrink-0">
+                                    {{ dep.ref }}
+                                </Link>
+                                <span class="text-sm text-slate-700 flex-1 truncate">{{ dep.title }}</span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0"
+                                    :class="statusClass[dep.status]">
+                                    {{ dep.status_label }}
+                                </span>
+                                <button v-if="can.edit" @click="removeBlocker(dep.id)"
+                                    class="text-xs text-red-400 hover:text-red-600 flex-shrink-0">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Blocks (outgoing) -->
+                    <div class="px-5 py-3">
+                        <p class="text-xs font-medium text-slate-500 mb-2">Blocks
+                            <span class="text-slate-400 font-normal">(depends on this BR)</span>
+                        </p>
+                        <div v-if="br.blocks.length === 0" class="text-xs text-slate-400 py-1">None — no BRs depend on this one.</div>
+                        <div v-else class="space-y-1">
+                            <div v-for="dep in br.blocks" :key="dep.id"
+                                class="flex items-center gap-3 py-1">
+                                <Link :href="route('projects.requirements.business.show', [project.id, dep.id])"
+                                    class="font-mono text-xs text-slate-400 hover:text-primary transition w-16 flex-shrink-0">
+                                    {{ dep.ref }}
+                                </Link>
+                                <span class="text-sm text-slate-700 flex-1 truncate">{{ dep.title }}</span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0"
+                                    :class="statusClass[dep.status]">
+                                    {{ dep.status_label }}
+                                </span>
+                                <button v-if="can.edit" @click="removeDependant(dep.id)"
+                                    class="text-xs text-red-400 hover:text-red-600 flex-shrink-0">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Linked TRs -->

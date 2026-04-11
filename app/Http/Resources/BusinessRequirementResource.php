@@ -22,6 +22,8 @@ class BusinessRequirementResource
             'category'       => $br->category,
             'creator'        => $br->creator,
             'tr_count'       => $br->technical_requirements_count,
+            'blocking_count' => $br->blocking_count ?? 0,
+            'is_blocked'     => (bool) ($br->is_blocked ?? false),
             'created_at'     => $br->created_at,
         ];
     }
@@ -48,12 +50,31 @@ class BusinessRequirementResource
             'technical_requirements' => $br->technicalRequirements->map(
                 fn ($tr) => TechnicalRequirementResource::linkedItem($tr)
             ),
+            'blocked_by' => $br->relationLoaded('blockedByBrs')
+                ? $br->blockedByBrs->map(fn ($b) => self::dependencyItem($b))
+                : [],
+            'blocks' => $br->relationLoaded('blockingBrs')
+                ? $br->blockingBrs->map(fn ($b) => self::dependencyItem($b))
+                : [],
+            'is_blocked' => $br->is_blocked,
             'comments' => $br->comments->map(fn ($c) => [
                 'id'         => $c->id,
                 'body'       => $c->body,
                 'user'       => $c->user,
                 'created_at' => $c->created_at,
             ]),
+        ];
+    }
+
+    public static function dependencyItem(BusinessRequirement $br): array
+    {
+        return [
+            'id'           => $br->id,
+            'ref'          => $br->ref,
+            'title'        => $br->title,
+            'status'       => $br->status->value,
+            'status_label' => $br->status->label(),
+            'status_color' => $br->status->color(),
         ];
     }
 

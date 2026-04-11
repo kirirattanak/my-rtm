@@ -342,13 +342,13 @@ Admins can create custom roles with any name and assign any combination of permi
 
 ---
 
-## Milestone 11 — BR Dependency Graph
+## Milestone 11 — BR Dependency Graph ✅
 
 **Goal:** Allow business requirements to declare blocking relationships with each other, visualise those dependencies as a directed graph, and surface prioritisation guidance based on the dependency chain.
 
 ---
 
-### 11.1 — Data Model
+### 11.1 — Data Model ✅
 
 **New table: `br_dependencies`**
 
@@ -362,75 +362,66 @@ Admins can create custom roles with any name and assign any combination of permi
 
 Constraints:
 - `UNIQUE (blocking_br_id, blocked_br_id)` — no duplicate links
-- Self-link guard: `blocking_br_id ≠ blocked_br_id` (enforced in FormRequest)
-- Cycle detection: creating a link that would form a cycle is rejected (e.g. A blocks B, B blocks C, C blocks A)
+- Self-link guard enforced in `BrDependencyController`
+- Cycle detection enforced in `BrDependencyController` via BFS traversal
 
 ---
 
-### 11.2 — Relationship API
+### 11.2 — Relationship API ✅
 
-Two named relationships on `BusinessRequirement`:
-- `blockingBrs()` — BRs that this BR is blocking (outgoing edges)
-- `blockedByBrs()` — BRs that are blocking this BR (incoming edges)
+Two self-referential `BelongsToMany` relationships on `BusinessRequirement`:
+- `blockingBrs()` — BRs that this BR is blocking (outgoing edges, pivot: `blocking_br_id`)
+- `blockedByBrs()` — BRs that are blocking this BR (incoming edges, pivot: `blocked_br_id`)
 
-A computed property `is_blocked: bool` — true when any of its `blockedByBrs` is not yet in `implemented` status.
+`getIsBlockedAttribute()` — true when the `blockedByBrs` relation is loaded and contains at least one BR not in `implemented` status.
 
 ---
 
-### 11.3 — BR Detail Page Changes
+### 11.3 — BR Detail Page Changes ✅
 
 On the BR show page, a new **Dependencies** panel:
-- **Blocks** section — list of BRs this BR must be resolved before (outgoing). Each item shows ref, title, status badge.
-- **Blocked By** section — list of BRs blocking this BR (incoming). Each item shows ref, title, status badge.
-- Add dependency button (searchable BR picker, same pattern as test suite BR picker). Cannot add self or a link that would create a cycle.
-- Remove dependency button (trash icon per row, soft confirmation).
-- A `blocked` badge on the BR header when `is_blocked` is true.
+- **Blocked By** section — searchable picker (search input + select dropdown) to add a prerequisite BR. Each existing blocker shows ref, title, status badge, and a Remove button.
+- **Blocks** section — informational list of BRs that depend on this one, each with a Remove button.
+- ⚠ **Blocked** badge in the BR header when `is_blocked` is true.
+- "View graph →" link in the panel header.
 
 ---
 
-### 11.4 — Dependency Graph View
+### 11.4 — Dependency Graph View ✅
 
-New page: `/projects/{project}/requirements/business/graph`
+Page: `GET /projects/{project}/requirements/business/graph` → `BrGraph.vue`
 
-A full-screen directed acyclic graph (DAG) visualisation of all BR dependencies within the project:
-
-- **Nodes:** one node per BR. Node colour encodes status (draft/review/approved/implemented/deprecated). Node label shows ref + truncated title.
-- **Edges:** directed arrows from blocker → blocked. Arrow colour encodes whether the blocker is resolved (green = implemented, red = not yet).
-- **Prioritisation layer:** BRs with no incoming edges (nothing blocks them) are highlighted as "ready to start". BRs whose all blockers are implemented are also highlighted.
-- **Depth ranking:** nodes arranged in topological layers (left-to-right or top-to-bottom) so dependency order is immediately obvious.
-- **Unlinked BRs:** BRs with no dependencies shown in a separate "unlinked" cluster or sidebar list.
-- **Interactions:** click a node to open the BR detail page; hover to see a tooltip with title, priority, and status.
-
-Implementation: custom Vue component using SVG. No external graph library. Positions computed via a simple topological sort + layer assignment (Sugiyama-style).
+Custom SVG DAG (no external library):
+- **Nodes:** 210×68px rounded rectangles. Fill/stroke colour encodes status. Amber border = blocked; green border = ready (all blockers implemented).
+- **Edges:** cubic bezier curves with SVG arrow markers. Amber = blocker pending; green = blocker implemented.
+- **Layout:** longest-path topological layer assignment; nodes distributed vertically within each layer.
+- **Unlinked BRs:** shown in a separate table below the graph.
+- **Interactions:** hover tooltip (Teleport) showing ref, title, priority, status, and blocked/ready state; click navigates to BR detail.
+- **Legend** bar above the graph explaining status colours and edge/node states.
 
 ---
 
-### 11.5 — BR List Page Changes
+### 11.5 — BR List Page Changes ✅
 
-On the BR index page:
-- A **Dependencies** column (or icon indicator) showing how many BRs block this one.
-- A **Blocked** badge on rows where `is_blocked` is true.
-- A **Graph** button in the header linking to the graph view.
-- Optional filter: "Show only blocked BRs".
+- **Dependency Graph** button in the header (links to graph view).
+- **Blockers** column showing the count of incoming blockers (amber when > 0, dash when none).
+- **Blocked** badge inline with the title on rows where `is_blocked` is true.
 
 ---
 
-### 11.6 — Cycle Detection
+### 11.6 — Cycle Detection ✅
 
-Before persisting a new dependency link, a server-side cycle check traverses the existing graph starting from `blocked_br_id` and confirms that `blocking_br_id` is not reachable. Rejection returns a validation error: _"This link would create a circular dependency."_
+`BrDependencyController::wouldCreateCycle()` — BFS from `blocked_br_id` following outgoing blocking edges. If `blocking_br_id` is reachable, the link is rejected with a validation error: _"This link would create a circular dependency."_
 
 ---
 
-### 11.7 — Implementation Sequence
+### 11.7 — Seeder ✅
 
-1. Migration: `br_dependencies` table with indexes and unique constraint
-2. `BusinessRequirement` model: `blockingBrs()`, `blockedByBrs()` relationships and `is_blocked` accessor
-3. `BrDependencyController`: `store` and `destroy` actions, with cycle detection in FormRequest/service
-4. Routes: `POST /projects/{project}/requirements/business/{br}/dependencies` and `DELETE .../dependencies/{dependency}`
-5. Policy: link creation/deletion follows `br.edit` permission on the owning BR
-6. BR show page: Dependencies panel with add/remove UI
-7. BR index page: blocked badge, dependency count, Graph button
-8. Graph view page and SVG DAG component
+`BrDependencySeeder` seeds two links for the E-Commerce Platform project:
+- BR-001 (Auth) blocks BR-003 (Checkout)
+- BR-002 (Catalog) blocks BR-003 (Checkout)
+
+This produces a diamond shape in the graph with BR-003 in a "Blocked" state, and BR-004 in the unlinked list.
 
 ### Access Rules
 - Users with `br.edit` permission can add and remove dependency links

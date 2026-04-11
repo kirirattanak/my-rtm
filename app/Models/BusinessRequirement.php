@@ -48,6 +48,25 @@ class BusinessRequirement extends Model
         return $this->belongsToMany(TechnicalRequirement::class, 'br_tr');
     }
 
+    /** BRs that this BR is blocking — outgoing edges (this BR must be done first). */
+    public function blockingBrs(): BelongsToMany
+    {
+        return $this->belongsToMany(static::class, 'br_dependencies', 'blocking_br_id', 'blocked_br_id');
+    }
+
+    /** BRs that are blocking this BR — incoming edges (prerequisites). */
+    public function blockedByBrs(): BelongsToMany
+    {
+        return $this->belongsToMany(static::class, 'br_dependencies', 'blocked_br_id', 'blocking_br_id');
+    }
+
+    /** True when at least one prerequisite is not yet implemented. */
+    public function getIsBlockedAttribute(): bool
+    {
+        return $this->relationLoaded('blockedByBrs')
+            && $this->blockedByBrs->contains(fn ($br) => $br->status->value !== 'implemented');
+    }
+
     public function comments(): MorphMany
     {
         return $this->morphMany(Comment::class, 'commentable')->latest();
