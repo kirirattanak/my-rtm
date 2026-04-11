@@ -64,7 +64,7 @@ function passRate(summary: TestSuiteDetail['summary']): number {
             <div class="flex items-start justify-between">
                 <div>
                     <h1 class="text-xl font-semibold text-slate-900">{{ suite.name }}</h1>
-                    <p v-if="suite.description" class="text-sm text-slate-500 mt-0.5">{{ suite.description }}</p>
+                    <div v-if="suite.description" class="prose prose-sm max-w-none text-slate-500 mt-0.5" v-html="suite.description" />
                     <p class="text-xs text-slate-400 mt-1">Created by {{ suite.creator }} · {{ suite.created_at }}</p>
                 </div>
                 <button
