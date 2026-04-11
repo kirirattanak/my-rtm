@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { type ActivityItem, type BreadcrumbItem, type Project, type ProjectCoverage, USER_ROLE_LABELS } from '@/types';
+import { type ActivityItem, type BreadcrumbItem, type Project, type ProjectCoverage } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
 
 const props = defineProps<{
@@ -21,14 +21,6 @@ const statusClasses: Record<string, string> = {
     archived: 'bg-slate-100 text-slate-500',
 };
 
-const roleColors: Record<string, string> = {
-    admin:            'bg-red-100 text-red-700',
-    project_manager:  'bg-violet-100 text-violet-700',
-    business_analyst: 'bg-blue-100 text-blue-700',
-    developer:        'bg-emerald-100 text-emerald-700',
-    tester:           'bg-amber-100 text-amber-700',
-    viewer:           'bg-slate-100 text-slate-500',
-};
 
 function confirmDelete() {
     if (confirm(`Delete "${props.project.name}"? This cannot be undone.`)) {
@@ -241,9 +233,8 @@ function confirmDelete() {
                                 <p class="text-xs text-slate-400">{{ member.email }}</p>
                             </div>
                         </div>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                            :class="roleColors[member.role]">
-                            {{ USER_ROLE_LABELS[member.role] }}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                            {{ member.role_name ?? '—' }}
                         </span>
                     </div>
                 </div>

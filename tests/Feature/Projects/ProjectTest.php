@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Projects;
 
-use App\Enums\UserRole;
+use App\Models\Role;
 use App\Models\Project;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -16,9 +16,9 @@ class ProjectTest extends TestCase
 
     private function makeProjectWithMember(string $role = 'project_manager'): array
     {
-        $user    = User::factory()->create(['role' => UserRole::from($role)]);
+        $user    = User::factory()->withRole($role)->create();
         $project = Project::factory()->create(['owner_id' => $user->id]);
-        $project->projectMembers()->create(['user_id' => $user->id, 'role' => $role]);
+        $project->projectMembers()->create(['user_id' => $user->id, 'role_id' => Role::where('slug', $role)->value('id')]);
 
         return [$user, $project];
     }
@@ -55,7 +55,7 @@ class ProjectTest extends TestCase
 
     public function test_viewer_cannot_create_project(): void
     {
-        $user = User::factory()->create(['role' => UserRole::Viewer]);
+        $user = User::factory()->create();
 
         $this->actingAs($user)
             ->post(route('projects.store'), ['name' => 'New Project', 'status' => 'active'])
@@ -92,7 +92,7 @@ class ProjectTest extends TestCase
     public function test_non_member_cannot_view_project(): void
     {
         $project = Project::factory()->create();
-        $user    = User::factory()->create(['role' => UserRole::Viewer]);
+        $user    = User::factory()->create();
 
         $this->actingAs($user)->get(route('projects.show', $project))->assertForbidden();
     }
@@ -116,8 +116,8 @@ class ProjectTest extends TestCase
     public function test_viewer_member_cannot_update_project(): void
     {
         [$pm, $project] = $this->makeProjectWithMember();
-        $viewer = User::factory()->create(['role' => UserRole::Viewer]);
-        $project->projectMembers()->create(['user_id' => $viewer->id, 'role' => 'viewer']);
+        $viewer = User::factory()->create();
+        $project->projectMembers()->create(['user_id' => $viewer->id, 'role_id' => Role::where('slug', 'viewer')->value('id')]);
 
         $this->actingAs($viewer)
             ->patch(route('projects.update', $project), ['name' => 'X', 'status' => 'active'])

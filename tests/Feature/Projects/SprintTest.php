@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Projects;
 
-use App\Enums\UserRole;
+use App\Models\Role;
 use App\Models\Project;
 use App\Models\Sprint;
 use App\Models\User;
@@ -17,9 +17,9 @@ class SprintTest extends TestCase
 
     private function makeUserAndProject(string $globalRole = 'project_manager'): array
     {
-        $user    = User::factory()->create(['role' => UserRole::from($globalRole)]);
+        $user    = User::factory()->withRole($globalRole)->create();
         $project = Project::factory()->create();
-        $project->projectMembers()->create(['user_id' => $user->id, 'role' => $globalRole]);
+        $project->projectMembers()->create(['user_id' => $user->id, 'role_id' => Role::where('slug', $globalRole)->value('id')]);
 
         return [$user, $project];
     }
@@ -69,7 +69,7 @@ class SprintTest extends TestCase
     {
         $user    = User::factory()->developer()->create();
         $project = Project::factory()->create();
-        $project->projectMembers()->create(['user_id' => $user->id, 'role' => 'developer']);
+        $project->projectMembers()->create(['user_id' => $user->id, 'role_id' => Role::where('slug', 'developer')->value('id')]);
 
         $this->actingAs($user)
             ->post(route('projects.sprints.store', $project), $this->validPayload())

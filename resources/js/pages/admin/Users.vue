@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { type BreadcrumbItem, type User, type UserRole, USER_ROLE_LABELS } from '@/types';
+import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
+type UserRow = { id: number; name: string; email: string; role_id: number | null; role_name: string | null; is_active: boolean; created_at: string };
+type RoleOption = { id: number; name: string; is_system: boolean };
+
 const props = defineProps<{
-    users: (User & { role_label: string })[],
-    roles: { value: UserRole; label: string }[],
+    users: UserRow[];
+    roles: RoleOption[];
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -15,31 +18,22 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const editingRole = ref<number | null>(null);
-const roleForm = useForm({ role: '' as UserRole });
+const roleForm = useForm({ role_id: null as number | null });
 
-function startEditRole(user: User & { role_label: string }) {
+function startEditRole(user: UserRow) {
     editingRole.value = user.id;
-    roleForm.role = user.role;
+    roleForm.role_id = user.role_id;
 }
 
-function saveRole(user: User) {
+function saveRole(user: UserRow) {
     roleForm.patch(route('admin.users.update-role', user.id), {
         onSuccess: () => { editingRole.value = null; },
     });
 }
 
-function toggleActive(user: User) {
+function toggleActive(user: UserRow) {
     router.patch(route('admin.users.toggle-active', user.id));
 }
-
-const roleBadgeClass: Record<UserRole, string> = {
-    admin:            'bg-red-100 text-red-800',
-    project_manager:  'bg-violet-100 text-violet-800',
-    business_analyst: 'bg-blue-100 text-blue-800',
-    developer:        'bg-emerald-100 text-emerald-800',
-    tester:           'bg-amber-100 text-amber-800',
-    viewer:           'bg-slate-100 text-slate-600',
-};
 </script>
 
 <template>
@@ -52,10 +46,16 @@ const roleBadgeClass: Record<UserRole, string> = {
                     <h1 class="text-xl font-semibold text-slate-900">User Management</h1>
                     <p class="text-sm text-slate-500 mt-0.5">Manage user roles and account status.</p>
                 </div>
-                <a :href="route('admin.invitations.index')"
-                   class="inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-medium px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">
-                    Invitations
-                </a>
+                <div class="flex items-center gap-2">
+                    <a :href="route('admin.roles.index')"
+                       class="inline-flex items-center gap-2 border border-slate-200 text-slate-600 text-sm font-medium px-4 py-2 rounded-lg hover:bg-slate-50 transition">
+                        Roles
+                    </a>
+                    <a :href="route('admin.invitations.index')"
+                       class="inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-medium px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">
+                        Invitations
+                    </a>
+                </div>
             </div>
 
             <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
@@ -77,9 +77,9 @@ const roleBadgeClass: Record<UserRole, string> = {
                             <td class="px-4 py-3 text-slate-600">{{ user.email }}</td>
                             <td class="px-4 py-3">
                                 <div v-if="editingRole === user.id" class="flex items-center gap-2">
-                                    <select v-model="roleForm.role"
+                                    <select v-model="roleForm.role_id"
                                         class="border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/50">
-                                        <option v-for="r in roles" :key="r.value" :value="r.value">{{ r.label }}</option>
+                                        <option v-for="r in roles" :key="r.id" :value="r.id">{{ r.name }}</option>
                                     </select>
                                     <button @click="saveRole(user)"
                                         class="text-xs text-emerald-600 font-medium hover:underline">Save</button>
@@ -87,10 +87,9 @@ const roleBadgeClass: Record<UserRole, string> = {
                                         class="text-xs text-slate-400 hover:underline">Cancel</button>
                                 </div>
                                 <span v-else
-                                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer"
-                                    :class="roleBadgeClass[user.role]"
+                                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 cursor-pointer"
                                     @click="startEditRole(user)">
-                                    {{ USER_ROLE_LABELS[user.role] }}
+                                    {{ user.role_name ?? '—' }}
                                 </span>
                             </td>
                             <td class="px-4 py-3">

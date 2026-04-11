@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Projects;
 
-use App\Enums\UserRole;
+use App\Models\Role;
 use App\Models\Project;
 use App\Models\TechnicalRequirement;
 use App\Models\User;
@@ -17,9 +17,9 @@ class TechnicalRequirementTest extends TestCase
 
     private function makeUserAndProject(string $globalRole = 'developer'): array
     {
-        $user    = User::factory()->create(['role' => UserRole::from($globalRole)]);
+        $user    = User::factory()->withRole($globalRole)->create();
         $project = Project::factory()->create();
-        $project->projectMembers()->create(['user_id' => $user->id, 'role' => $globalRole]);
+        $project->projectMembers()->create(['user_id' => $user->id, 'role_id' => Role::where('slug', $globalRole)->value('id')]);
 
         return [$user, $project];
     }
@@ -74,9 +74,9 @@ class TechnicalRequirementTest extends TestCase
 
     public function test_viewer_cannot_create_tr(): void
     {
-        $user    = User::factory()->create(['role' => UserRole::Viewer]);
+        $user    = User::factory()->create();
         $project = Project::factory()->create();
-        $project->projectMembers()->create(['user_id' => $user->id, 'role' => 'viewer']);
+        $project->projectMembers()->create(['user_id' => $user->id, 'role_id' => Role::where('slug', 'viewer')->value('id')]);
 
         $this->actingAs($user)
             ->post(route('projects.requirements.technical.store', $project), $this->validPayload())
@@ -121,9 +121,9 @@ class TechnicalRequirementTest extends TestCase
 
     public function test_project_manager_can_delete_tr(): void
     {
-        $user    = User::factory()->create(['role' => UserRole::ProjectManager]);
+        $user    = User::factory()->projectManager()->create();
         $project = Project::factory()->create();
-        $project->projectMembers()->create(['user_id' => $user->id, 'role' => 'project_manager']);
+        $project->projectMembers()->create(['user_id' => $user->id, 'role_id' => Role::where('slug', 'project_manager')->value('id')]);
         $tr = $this->tr($project, $user);
 
         $this->actingAs($user)

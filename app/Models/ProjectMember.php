@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\UserRole;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -11,15 +10,8 @@ class ProjectMember extends Model
     protected $fillable = [
         'project_id',
         'user_id',
-        'role',
+        'role_id',
     ];
-
-    protected function casts(): array
-    {
-        return [
-            'role' => UserRole::class,
-        ];
-    }
 
     public function project(): BelongsTo
     {
@@ -29,5 +21,10 @@ class ProjectMember extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function role(): BelongsTo
+    {
+        return $this->belongsTo(Role::class);
     }
 }
