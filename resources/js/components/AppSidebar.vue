@@ -3,31 +3,78 @@ import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid } from 'lucide-vue-next';
+import { type NavItem, type SharedData } from '@/types';
+import { Link, usePage } from '@inertiajs/vue3';
+import { BarChart2, ClipboardList, Folder, FlaskConical, GitBranch, Mail, PieChart, SquareKanban, TestTube2, Users, Zap } from 'lucide-vue-next';
+import { computed } from 'vue';
 import AppLogo from './AppLogo.vue';
 
+const page = usePage<SharedData>();
+const isAdmin = page.props.auth.user.role === 'admin';
+const currentProject = computed(() => page.props.currentProject);
+
 const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: '/dashboard',
-        icon: LayoutGrid,
-    },
+    { title: 'Projects', href: '/projects', icon: Folder },
 ];
 
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Github Repo',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: Folder,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits',
-        icon: BookOpen,
-    },
+const adminNavItems: NavItem[] = [
+    { title: 'Users', href: '/admin/users', icon: Users },
+    { title: 'Invitations', href: '/admin/invitations', icon: Mail },
 ];
+
+const projectNavItems = computed<NavItem[]>(() => {
+    const project = currentProject.value;
+    if (!project) return [];
+    return [
+        {
+            title: 'Business Requirements',
+            href: `/projects/${project.id}/requirements/business`,
+            icon: ClipboardList,
+        },
+        {
+            title: 'Technical Requirements',
+            href: `/projects/${project.id}/requirements/technical`,
+            icon: ClipboardList,
+        },
+        {
+            title: 'Test Cases',
+            href: `/projects/${project.id}/test-cases`,
+            icon: FlaskConical,
+        },
+        {
+            title: 'Coverage',
+            href: `/projects/${project.id}/coverage`,
+            icon: PieChart,
+        },
+        {
+            title: 'RTM',
+            href: `/projects/${project.id}/rtm`,
+            icon: GitBranch,
+        },
+        {
+            title: 'Sprints',
+            href: `/projects/${project.id}/sprints`,
+            icon: Zap,
+        },
+        {
+            title: 'Tasks',
+            href: `/projects/${project.id}/tasks`,
+            icon: SquareKanban,
+        },
+        {
+            title: 'Test Suites',
+            href: `/projects/${project.id}/test-suites`,
+            icon: TestTube2,
+        },
+        {
+            title: 'Reports',
+            href: `/projects/${project.id}/reports`,
+            icon: BarChart2,
+        },
+    ];
+});
+
+const footerNavItems: NavItem[] = [];
 </script>
 
 <template>
@@ -46,6 +93,12 @@ const footerNavItems: NavItem[] = [
 
         <SidebarContent>
             <NavMain :items="mainNavItems" />
+            <NavMain
+                v-if="currentProject && projectNavItems.length"
+                :items="projectNavItems"
+                :label="currentProject.name"
+            />
+            <NavMain v-if="isAdmin" :items="adminNavItems" label="Admin" />
         </SidebarContent>
 
         <SidebarFooter>

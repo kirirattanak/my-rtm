@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RTM — UI Prototype</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50:  '#fdf2f2',
+              100: '#fce4e4',
+              200: '#f9cccc',
+              300: '#f4a8a8',
+              400: '#ec7474',
+              500: '#df4848',
+              600: '#cb2d2d',
+              700: '#aa2020',
+              800: '#8b1a1a',
+              900: '#741616',
+              950: '#400a0a',
+            },
+            surface: '#FAFAFA',
+            panel:   '#F3F4F6',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .nav-item { @apply flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-white/10 hover:text-white transition-colors cursor-pointer; }
+    .nav-item.active { @apply bg-primary-800 text-white; }
+    .screen { display: none; }
+    .screen.active { display: block; }
+    .badge { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium; }
+    .stat-card { @apply bg-white rounded-xl border border-slate-200 p-5; }
+    .btn-primary { @apply bg-primary-800 hover:bg-primary-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors cursor-pointer; }
+    .btn-ghost { @apply text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-sm font-medium px-3 py-2 rounded-lg transition-colors cursor-pointer; }
+    .table-row { @apply border-b border-slate-100 hover:bg-slate-50 transition-colors; }
+    .priority-critical { @apply bg-red-100 text-red-700; }
+    .priority-high     { @apply bg-orange-100 text-orange-700; }
+    .priority-medium   { @apply bg-amber-100 text-amber-700; }
+    .priority-low      { @apply bg-slate-100 text-slate-600; }
+    .status-approved     { @apply bg-emerald-100 text-emerald-700; }
+    .status-draft        { @apply bg-slate-100 text-slate-600; }
+    .status-review       { @apply bg-blue-100 text-blue-700; }
+    .status-implemented  { @apply bg-violet-100 text-violet-700; }
+    .progress-bar { @apply h-2 rounded-full; }
+    .tooltip { position: relative; }
+    .tooltip:hover::after {
+      content: attr(data-tip);
+      position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%);
+      background: #1e293b; color: white; padding: 4px 8px; border-radius: 6px;
+      font-size: 11px; white-space: nowrap; z-index: 50;
+    }
+  </style>
+</head>
+<body class="bg-surface text-slate-800">
+
+<!-- ─── LAYOUT ──────────────────────────────────────────────────── -->
+<div class="flex h-screen overflow-hidden">
+
+  <!-- Sidebar -->
+  <aside class="w-60 flex-shrink-0 bg-slate-900 flex flex-col">
+    <!-- Logo -->
+    <div class="flex items-center gap-2.5 px-5 py-5 border-b border-white/10">
+      <div class="w-8 h-8 bg-primary-800 rounded-lg flex items-center justify-center">
+        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+      </div>
+      <span class="text-white font-semibold text-sm tracking-wide">RTM</span>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+      <p class="px-3 py-1 text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Workspace</p>
+      <div class="nav-item active" onclick="show('all-projects')">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"/></svg>
+        All Projects
+      </div>
+      <div class="nav-item" onclick="show('dashboard')">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+        Dashboard
+      </div>
+
+      <p class="px-3 pt-4 pb-1 text-xs font-medium text-slate-500 uppercase tracking-wider">Project · E-Commerce</p>
+      <div class="nav-item" onclick="show('requirements')">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Requirements
+      </div>
+      <div class="nav-item" onclick="show('test-cases')">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+        Test Cases
+      </div>
+      <div class="nav-item" onclick="show('rtm')">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+        RTM Matrix
+      </div>
+      <div class="nav-item" onclick="show('capacity')">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        Capacity
+      </div>
+    </nav>
+
+    <!-- User -->
+    <div class="border-t border-white/10 px-4 py-3 flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full bg-primary-800 flex items-center justify-center text-white text-xs font-bold">KR</div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm text-white font-medium truncate">Kiri Rattanak</p>
+        <p class="text-xs text-slate-400 truncate">Admin</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="flex-1 overflow-y-auto bg-surface">
+
+    <!-- ══ SCREEN: All Projects ══════════════════════════════════ -->
+    <div id="screen-all-projects" class="screen active">
+      <div class="px-8 py-6 border-b border-slate-200 bg-white flex items-center justify-between">
+        <div>
+          <h1 class="text-xl font-semibold text-slate-900">All Projects</h1>
+          <p class="text-sm text-slate-500 mt-0.5">Manage and track all your projects</p>
+        </div>
+        <button class="btn-primary">+ New Project</button>
+      </div>
+
+      <!-- Filters -->
+      <div class="px-8 py-4 flex items-center gap-3 border-b border-slate-100 bg-white">
+        <input type="text" placeholder="Search projects..." class="border border-slate-200 rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary-300"/>
+        <select class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300">
+          <option>All statuses</option><option>Active</option><option>On Hold</option><option>Archived</option>
+        </select>
+        <select class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300">
+          <option>All members</option>
+        </select>
+      </div>
+
+      <!-- Project Cards -->
+      <div class="p-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+
+        <!-- Card 1 -->
+        <div class="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition-shadow cursor-pointer" onclick="show('dashboard')">
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center">
+                <span class="text-primary-800 font-bold text-sm">EC</span>
+              </div>
+              <div>
+                <h3 class="font-semibold text-slate-900 text-sm">E-Commerce Platform</h3>
+                <p class="text-xs text-slate-500">Started Mar 2026</p>
+              </div>
+            </div>
+            <span class="badge bg-emerald-100 text-emerald-700">Active</span>
+          </div>
+          <p class="text-xs text-slate-500 mb-4 line-clamp-2">Full redesign of the customer-facing shop including checkout, product catalog, and order management.</p>
+          <!-- Coverage bar -->
+          <div class="space-y-2 mb-4">
+            <div class="flex justify-between text-xs text-slate-500">
+              <span>BR Coverage</span><span class="font-medium text-slate-700">72%</span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-2">
+              <div class="bg-primary-700 h-2 rounded-full" style="width:72%"></div>
+            </div>
+            <div class="flex justify-between text-xs text-slate-500">
+              <span>Test Coverage</span><span class="font-medium text-slate-700">58%</span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-2">
+              <div class="bg-amber-500 h-2 rounded-full" style="width:58%"></div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between text-xs text-slate-500">
+            <div class="flex gap-3">
+              <span>24 BRs</span>
+              <span>41 TRs</span>
+              <span>89 TCs</span>
+            </div>
+            <div class="flex -space-x-2">
+              <div class="w-6 h-6 rounded-full bg-primary-800 border-2 border-white flex items-center justify-center text-white text-xs">K</div>
+              <div class="w-6 h-6 rounded-full bg-slate-400 border-2 border-white flex items-center justify-center text-white text-xs">A</div>
+              <div class="w-6 h-6 rounded-full bg-emerald-600 border-2 border-white flex items-center justify-center text-white text-xs">T</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition-shadow cursor-pointer">
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                <span class="text-blue-800 font-bold text-sm">MB</span>
+              </div>
+              <div>
+                <h3 class="font-semibold text-slate-900 text-sm">Mobile Banking App</h3>
+                <p class="text-xs text-slate-500">Started Jan 2026</p>
+              </div>
+            </div>
+            <span class="badge bg-amber-100 text-amber-700">On Hold</span>
+          </div>
+          <p class="text-xs text-slate-500 mb-4 line-clamp-2">Native mobile application for retail banking customers with account management and transfers.</p>
+          <div class="space-y-2 mb-4">
+            <div class="flex justify-between text-xs text-slate-500">
+              <span>BR Coverage</span><span class="font-medium text-slate-700">45%</span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-2">
+              <div class="bg-primary-700 h-2 rounded-full" style="width:45%"></div>
+            </div>
+            <div class="flex justify-between text-xs text-slate-500">
+              <span>Test Coverage</span><span class="font-medium text-slate-700">30%</span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-2">
+              <div class="bg-amber-500 h-2 rounded-full" style="width:30%"></div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between text-xs text-slate-500">
+            <div class="flex gap-3"><span>18 BRs</span><span>29 TRs</span><span>42 TCs</span></div>
+            <div class="flex -space-x-2">
+              <div class="w-6 h-6 rounded-full bg-violet-600 border-2 border-white flex items-center justify-center text-white text-xs">M</div>
+              <div class="w-6 h-6 rounded-full bg-slate-400 border-2 border-white flex items-center justify-center text-white text-xs">J</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition-shadow cursor-pointer">
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+                <span class="text-emerald-800 font-bold text-sm">HR</span>
+              </div>
+              <div>
+                <h3 class="font-semibold text-slate-900 text-sm">HR Portal</h3>
+                <p class="text-xs text-slate-500">Started Feb 2026</p>
+              </div>
+            </div>
+            <span class="badge bg-emerald-100 text-emerald-700">Active</span>
+          </div>
+          <p class="text-xs text-slate-500 mb-4 line-clamp-2">Internal HR management system for onboarding, leave management, and performance reviews.</p>
+          <div class="space-y-2 mb-4">
+            <div class="flex justify-between text-xs text-slate-500">
+              <span>BR Coverage</span><span class="font-medium text-slate-700">91%</span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-2">
+              <div class="bg-primary-700 h-2 rounded-full" style="width:91%"></div>
+            </div>
+            <div class="flex justify-between text-xs text-slate-500">
+              <span>Test Coverage</span><span class="font-medium text-slate-700">84%</span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-2">
+              <div class="bg-emerald-500 h-2 rounded-full" style="width:84%"></div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between text-xs text-slate-500">
+            <div class="flex gap-3"><span>11 BRs</span><span>22 TRs</span><span>54 TCs</span></div>
+            <div class="flex -space-x-2">
+              <div class="w-6 h-6 rounded-full bg-rose-500 border-2 border-white flex items-center justify-center text-white text-xs">S</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add project card -->
+        <div class="border-2 border-dashed border-slate-200 rounded-xl p-5 flex flex-col items-center justify-center gap-2 hover:border-primary-400 hover:bg-primary-50 transition-colors cursor-pointer group">
+          <div class="w-10 h-10 rounded-full bg-slate-100 group-hover:bg-primary-100 flex items-center justify-center transition-colors">
+            <svg class="w-5 h-5 text-slate-400 group-hover:text-primary-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          </div>
+          <p class="text-sm text-slate-500 group-hover:text-primary-700 font-medium">New Project</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SCREEN: Project Dashboard ═════════════════════════════ -->
+    <div id="screen-dashboard" class="screen">
+      <div class="px-8 py-6 border-b border-slate-200 bg-white flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-primary-100 flex items-center justify-center">
+            <span class="text-primary-800 font-bold text-xs">EC</span>
+          </div>
+          <div>
+            <h1 class="text-xl font-semibold text-slate-900">E-Commerce Platform</h1>
+            <p class="text-sm text-slate-500">Project Dashboard</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="badge bg-emerald-100 text-emerald-700 text-xs px-2.5 py-1">Active</span>
+          <button class="btn-ghost">Settings</button>
+        </div>
+      </div>
+
+      <div class="p-8 space-y-6">
+        <!-- Stat cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="stat-card">
+            <p class="text-xs text-slate-500 mb-1">Business Reqs</p>
+            <p class="text-2xl font-bold text-slate-900">24</p>
+            <p class="text-xs text-slate-400 mt-1">18 approved · 6 draft</p>
+          </div>
+          <div class="stat-card">
+            <p class="text-xs text-slate-500 mb-1">Technical Reqs</p>
+            <p class="text-2xl font-bold text-slate-900">41</p>
+            <p class="text-xs text-slate-400 mt-1">35 linked to BRs</p>
+          </div>
+          <div class="stat-card">
+            <p class="text-xs text-slate-500 mb-1">Test Cases</p>
+            <p class="text-2xl font-bold text-slate-900">89</p>
+            <p class="text-xs text-slate-400 mt-1">52 passing · 12 failing</p>
+          </div>
+          <div class="stat-card">
+            <p class="text-xs text-slate-500 mb-1">Open Tasks</p>
+            <p class="text-2xl font-bold text-slate-900">17</p>
+            <p class="text-xs text-slate-400 mt-1">4 overdue</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-6">
+          <!-- Coverage overview -->
+          <div class="col-span-2 bg-white border border-slate-200 rounded-xl p-5">
+            <h2 class="font-semibold text-slate-800 text-sm mb-4">Coverage Overview</h2>
+            <div class="space-y-4">
+              <div>
+                <div class="flex justify-between text-sm mb-1.5">
+                  <span class="text-slate-600">BR → TR Traceability</span>
+                  <span class="font-semibold text-slate-800">72%</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-3">
+                  <div class="bg-primary-700 h-3 rounded-full" style="width:72%"></div>
+                </div>
+                <p class="text-xs text-slate-400 mt-1">17 of 24 BRs have linked technical requirements</p>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-1.5">
+                  <span class="text-slate-600">TR → Test Case Coverage</span>
+                  <span class="font-semibold text-slate-800">58%</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-3">
+                  <div class="bg-amber-500 h-3 rounded-full" style="width:58%"></div>
+                </div>
+                <p class="text-xs text-slate-400 mt-1">24 of 41 TRs have at least one passing test case</p>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-1.5">
+                  <span class="text-slate-600">Test Pass Rate</span>
+                  <span class="font-semibold text-slate-800">81%</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-3">
+                  <div class="bg-emerald-500 h-3 rounded-full" style="width:81%"></div>
+                </div>
+                <p class="text-xs text-slate-400 mt-1">52 passing out of 64 executed test cases</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Status breakdown -->
+          <div class="bg-white border border-slate-200 rounded-xl p-5">
+            <h2 class="font-semibold text-slate-800 text-sm mb-4">BR Status</h2>
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2"><div class="w-2.5 h-2.5 rounded-full bg-emerald-500"></div><span class="text-sm text-slate-600">Approved</span></div>
+                <span class="text-sm font-semibold text-slate-800">10</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2"><div class="w-2.5 h-2.5 rounded-full bg-blue-500"></div><span class="text-sm text-slate-600">In Review</span></div>
+                <span class="text-sm font-semibold text-slate-800">5</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2"><div class="w-2.5 h-2.5 rounded-full bg-slate-400"></div><span class="text-sm text-slate-600">Draft</span></div>
+                <span class="text-sm font-semibold text-slate-800">6</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2"><div class="w-2.5 h-2.5 rounded-full bg-violet-500"></div><span class="text-sm text-slate-600">Implemented</span></div>
+                <span class="text-sm font-semibold text-slate-800">3</span>
+              </div>
+              <hr class="border-slate-100"/>
+              <div class="bg-red-50 border border-red-100 rounded-lg p-3">
+                <p class="text-xs font-medium text-red-700">Coverage Gaps</p>
+                <p class="text-xl font-bold text-red-700 mt-0.5">7</p>
+                <p class="text-xs text-red-500">BRs without any TR link</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="bg-white border border-slate-200 rounded-xl p-5">
+          <h2 class="font-semibold text-slate-800 text-sm mb-4">Recent Activity</h2>
+          <div class="space-y-3">
+            <div class="flex items-start gap-3 text-sm">
+              <div class="w-7 h-7 rounded-full bg-primary-800 flex-shrink-0 flex items-center justify-center text-white text-xs">K</div>
+              <div>
+                <p class="text-slate-700"><span class="font-medium">Kiri</span> approved <span class="text-primary-700 font-medium cursor-pointer">BR-008 · Payment Gateway Integration</span></p>
+                <p class="text-xs text-slate-400 mt-0.5">2 hours ago</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3 text-sm">
+              <div class="w-7 h-7 rounded-full bg-emerald-600 flex-shrink-0 flex items-center justify-center text-white text-xs">T</div>
+              <div>
+                <p class="text-slate-700"><span class="font-medium">Thida</span> logged 3 test runs on <span class="text-primary-700 font-medium cursor-pointer">TC-042 · Checkout flow with coupon</span></p>
+                <p class="text-xs text-slate-400 mt-0.5">4 hours ago</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3 text-sm">
+              <div class="w-7 h-7 rounded-full bg-slate-400 flex-shrink-0 flex items-center justify-center text-white text-xs">A</div>
+              <div>
+                <p class="text-slate-700"><span class="font-medium">Alex</span> linked <span class="text-primary-700 font-medium cursor-pointer">TR-019</span> to <span class="text-primary-700 font-medium cursor-pointer">BR-005 · Product Search</span></p>
+                <p class="text-xs text-slate-400 mt-0.5">Yesterday</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SCREEN: Requirements ═══════════════════════════════════ -->
+    <div id="screen-requirements" class="screen">
+      <div class="px-8 py-6 border-b border-slate-200 bg-white flex items-center justify-between">
+        <div>
+          <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+            <span>E-Commerce Platform</span><span>/</span><span>Requirements</span>
+          </div>
+          <h1 class="text-xl font-semibold text-slate-900">Requirements</h1>
+        </div>
+        <button class="btn-primary">+ Add Requirement</button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="px-8 bg-white border-b border-slate-200 flex gap-6">
+        <button class="py-3 text-sm font-medium text-primary-700 border-b-2 border-primary-700">Business Requirements <span class="ml-1 badge bg-primary-100 text-primary-700">24</span></button>
+        <button class="py-3 text-sm font-medium text-slate-500 hover:text-slate-700 border-b-2 border-transparent">Technical Requirements <span class="ml-1 badge bg-slate-100 text-slate-500">41</span></button>
+      </div>
+
+      <!-- Filters -->
+      <div class="px-8 py-3 bg-white border-b border-slate-100 flex items-center gap-3">
+        <input type="text" placeholder="Search requirements..." class="border border-slate-200 rounded-lg px-3 py-1.5 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary-300"/>
+        <select class="border border-slate-200 rounded-lg px-3 py-1.5 text-sm"><option>All statuses</option></select>
+        <select class="border border-slate-200 rounded-lg px-3 py-1.5 text-sm"><option>All priorities</option></select>
+        <select class="border border-slate-200 rounded-lg px-3 py-1.5 text-sm"><option>All categories</option></select>
+      </div>
+
+      <!-- Table -->
+      <div class="px-8 py-4">
+        <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-slate-200 bg-slate-50">
+                <th class="text-left px-4 py-3 text-xs font-medium text-slate-500 w-20">ID</th>
+                <th class="text-left px-4 py-3 text-xs font-medium text-slate-500">Title</th>
+                <th class="text-left px-4 py-3 text-xs font-medium text-slate-500 w-24">Priority</th>
+                <th class="text-left px-4 py-3 text-xs font-medium text-slate-500 w-28">Status</th>
+                <th class="text-left px-4 py-3 text-xs font-medium text-slate-500 w-20">TRs</th>
+                <th class="text-left px-4 py-3 text-xs font-medium text-slate-500 w-20">Coverage</th>
+                <th class="text-left px-4 py-3 text-xs font-medium text-slate-500 w-32">Updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="table-row">
+                <td class="px-4 py-3 text-slate-400 font-mono text-xs">BR-001</td>
+                <td class="px-4 py-3"><span class="font-medium text-primary-700 cursor-pointer hover:underline">User Registration & Authentication</span></td>
+                <td class="px-4 py-3"><span class="badge priority-critical">Critical</span></td>
+                <td class="px-4 py-3"><span class="badge status-approved">Approved</span></td>
+                <td class="px-4 py-3 text-slate-600">4</td>
+                <td class="px-4 py-3"><div class="flex items-center gap-1.5"><div class="w-16 bg-slate-100 rounded-full h-1.5"><div class="bg-emerald-500 h-1.5 rounded-full" style="width:100%"></div></div><span class="text-xs text-slate-500">100%</span></div></td>
+                <td class="px-4 py-3 text-xs text-slate-400">2 days ago</td>
+              </tr>
+              <tr class="table-row">
+                <td class="px-4 py-3 text-slate-400 font-mono text-xs">BR-002</td>
+                <td class="px-4 py-3"><span class="font-medium text-primary-700 cursor-pointer hover:underline">Product Catalog & Search</span></td>
+                <td class="px-4 py-3"><span class="badge priority-high">High</span></td>
+                <td class="px-4 py-3"><span class="badge status-approved">Approved</span></td>
+                <td class="px-4 py-3 text-slate-600">6</td>
+                <td class="px-4 py-3"><div class="flex items-center gap-1.5"><div class="w-16 bg-slate-100 rounded-full h-1.5"><div class="bg-amber-500 h-1.5 rounded-full" style="width:66%"></div></div><span class="text-xs text-slate-500">66%</span></div></td>
+                <td class="px-4 py-3 text-xs text-slate-400">3 days ago</td>
+              </tr>
+              <tr class="table-row">
+                <td class="px-4 py-3 text-slate-400 font-mono text-xs">BR-003</td>
+                <td class="px-4 py-3"><span class="font-medium text-primary-700 cursor-pointer hover:underline">Shopping Cart Management</span></td>
+                <td class="px-4 py-3"><span class="badge priority-high">High</span></td>
+                <td class="px-4 py-3"><span class="badge status-review">In Review</span></td>
+                <td class="px-4 py-3 text-slate-600">3</td>
+                <td class="px-4 py-3"><div class="flex items-center gap-1.5"><div class="w-16 bg-slate-100 rounded-full h-1.5"><div class="bg-amber-500 h-1.5 rounded-full" style="width:33%"></div></div><span class="text-xs text-slate-500">33%</span></div></td>
+                <td class="px-4 py-3 text-xs text-slate-400">5 days ago</td>
+              </tr>
+              <tr class="table-row">
+                <td class="px-4 py-3 text-slate-400 font-mono text-xs">BR-004</td>
+                <td class="px-4 py-3"><span class="font-medium text-primary-700 cursor-pointer hover:underline">Checkout & Payment Processing</span></td>
+                <td class="px-4 py-3"><span class="badge priority-critical">Critical</span></td>
+                <td class="px-4 py-3"><span class="badge status-implemented">Implemented</span></td>
+                <td class="px-4 py-3 text-slate-600">8</td>
+                <td class="px-4 py-3"><div class="flex items-center gap-1.5"><div class="w-16 bg-slate-100 rounded-full h-1.5"><div class="bg-emerald-500 h-1.5 rounded-full" style="width:87%"></div></div><span class="text-xs text-slate-500">87%</span></div></td>
+                <td class="px-4 py-3 text-xs text-slate-400">1 week ago</td>
+              </tr>
+              <tr class="table-row">
+                <td class="px-4 py-3 text-slate-400 font-mono text-xs">BR-005</td>
+                <td class="px-4 py-3"><span class="font-medium text-primary-700 cursor-pointer hover:underline">Order Tracking & History</span></td>
+                <td class="px-4 py-3"><span class="badge priority-medium">Medium</span></td>
+                <td class="px-4 py-3"><span class="badge status-draft">Draft</span></td>
+                <td class="px-4 py-3 text-slate-600">0</td>
+                <td class="px-4 py-3"><div class="flex items-center gap-1.5"><div class="w-16 bg-slate-100 rounded-full h-1.5"><div class="bg-red-400 h-1.5 rounded-full" style="width:0%"></div></div><span class="text-xs text-red-400">0%</span></div></td>
+                <td class="px-4 py-3 text-xs text-slate-400">2 weeks ago</td>
+              </tr>
+              <tr class="table-row">
+                <td class="px-4 py-3 text-slate-400 font-mono text-xs">BR-006</td>
+                <td class="px-4 py-3"><span class="font-medium text-primary-700 cursor-pointer hover:underline">Customer Review & Rating System</span></td>
+                <td class="px-4 py-3"><span class="badge priority-low">Low</span></td>
+                <td class="px-4 py-3"><span class="badge status-draft">Draft</span></td>
+                <td class="px-4 py-3 text-slate-600">0</td>
+                <td class="px-4 py-3"><div class="flex items-center gap-1.5"><div class="w-16 bg-slate-100 rounded-full h-1.5"><div class="bg-red-400 h-1.5 rounded-full" style="width:0%"></div></div><span class="text-xs text-red-400">0%</span></div></td>
+                <td class="px-4 py-3 text-xs text-slate-400">2 weeks ago</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SCREEN: Test Cases ════════════════════════════════════ -->
+    <div id="screen-test-cases" class="screen">
+      <div class="px-8 py-6 border-b border-slate-200 bg-white flex items-center justify-between">
+        <div>
+          <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+            <span>E-Commerce Platform</span><span>/</span><span>Test Cases</span>
+          </div>
+          <h1 class="text-xl font-semibold text-slate-900">Test Cases</h1>
+        </div>
+        <button class="btn-primary">+ Add Test Case</button>
+      </div>
+
+      <div class="px-8 py-3 bg-white border-b border-slate-100 flex items-center gap-3">
+        <input type="text" placeholder="Search test cases..." class="border border-slate-200 rounded-lg px-3 py-1.5 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary-300"/>
+        <select class="border border-slate-200 rounded-lg px-3 py-1.5 text-sm"><option>All results</option></select>
+        <select class="border border-slate-200 rounded-lg px-3 py-1.5 text-sm"><option>All assignees</option></select>
+      </div>
+
+      <div class="px-8 py-4">
+        <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-slate-200 bg-slate-50">
+                <th class="text-left px-4 py-3 text-xs font-medium text-slate-500 w-20">ID</th>
+                <th class="text-left px-4 py-3 text-xs font-medium text-slate-500">Title</th>
+                <th class="text-left px-4 py-3 text-xs font-medium text-slate-500 w-28">Linked TR</th>
+                <th class="text-left px-4 py-3 text-xs font-medium text-slate-500 w-20">Type</th>
+                <th class="text-left px-4 py-3 text-xs font-medium text-slate-500 w-24">Last Run</th>
+                <th class="text-left px-4 py-3 text-xs font-medium text-slate-500 w-28">Assignee</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="table-row">
+                <td class="px-4 py-3 text-slate-400 font-mono text-xs">TC-001</td>
+                <td class="px-4 py-3 font-medium text-primary-700 cursor-pointer hover:underline">Login with valid credentials</td>
+                <td class="px-4 py-3 text-xs font-mono text-slate-500">TR-001, TR-002</td>
+                <td class="px-4 py-3"><span class="badge bg-slate-100 text-slate-600">Manual</span></td>
+                <td class="px-4 py-3"><span class="badge bg-emerald-100 text-emerald-700">Pass</span></td>
+                <td class="px-4 py-3 text-sm text-slate-600">Thida K.</td>
+              </tr>
+              <tr class="table-row">
+                <td class="px-4 py-3 text-slate-400 font-mono text-xs">TC-002</td>
+                <td class="px-4 py-3 font-medium text-primary-700 cursor-pointer hover:underline">Login with invalid password</td>
+                <td class="px-4 py-3 text-xs font-mono text-slate-500">TR-001</td>
+                <td class="px-4 py-3"><span class="badge bg-slate-100 text-slate-600">Manual</span></td>
+                <td class="px-4 py-3"><span class="badge bg-emerald-100 text-emerald-700">Pass</span></td>
+                <td class="px-4 py-3 text-sm text-slate-600">Thida K.</td>
+              </tr>
+              <tr class="table-row">
+                <td class="px-4 py-3 text-slate-400 font-mono text-xs">TC-015</td>
+                <td class="px-4 py-3 font-medium text-primary-700 cursor-pointer hover:underline">Search products by keyword</td>
+                <td class="px-4 py-3 text-xs font-mono text-slate-500">TR-009</td>
+                <td class="px-4 py-3"><span class="badge bg-blue-100 text-blue-700">Auto</span></td>
+                <td class="px-4 py-3"><span class="badge bg-red-100 text-red-700">Fail</span></td>
+                <td class="px-4 py-3 text-sm text-slate-600">Alex M.</td>
+              </tr>
+              <tr class="table-row">
+                <td class="px-4 py-3 text-slate-400 font-mono text-xs">TC-042</td>
+                <td class="px-4 py-3 font-medium text-primary-700 cursor-pointer hover:underline">Checkout flow with coupon code</td>
+                <td class="px-4 py-3 text-xs font-mono text-slate-500">TR-018, TR-021</td>
+                <td class="px-4 py-3"><span class="badge bg-slate-100 text-slate-600">Manual</span></td>
+                <td class="px-4 py-3"><span class="badge bg-amber-100 text-amber-700">Blocked</span></td>
+                <td class="px-4 py-3 text-sm text-slate-600">Thida K.</td>
+              </tr>
+              <tr class="table-row">
+                <td class="px-4 py-3 text-slate-400 font-mono text-xs">TC-058</td>
+                <td class="px-4 py-3 font-medium text-primary-700 cursor-pointer hover:underline">Add to cart and verify count</td>
+                <td class="px-4 py-3 text-xs font-mono text-slate-500">TR-011</td>
+                <td class="px-4 py-3"><span class="badge bg-blue-100 text-blue-700">Auto</span></td>
+                <td class="px-4 py-3"><span class="badge bg-slate-100 text-slate-500">Skipped</span></td>
+                <td class="px-4 py-3 text-sm text-slate-600">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SCREEN: RTM Matrix ═════════════════════════════════════ -->
+    <div id="screen-rtm" class="screen">
+      <div class="px-8 py-6 border-b border-slate-200 bg-white flex items-center justify-between">
+        <div>
+          <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+            <span>E-Commerce Platform</span><span>/</span><span>RTM Matrix</span>
+          </div>
+          <h1 class="text-xl font-semibold text-slate-900">Requirement Traceability Matrix</h1>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn-ghost">Export</button>
+          <button class="btn-primary">Filter</button>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="px-8 py-3 bg-white border-b border-slate-100 flex items-center gap-5 text-xs text-slate-500">
+        <span class="font-medium text-slate-700">Legend:</span>
+        <div class="flex items-center gap-1.5"><div class="w-4 h-4 rounded bg-emerald-500 opacity-80"></div>Covered & Passing</div>
+        <div class="flex items-center gap-1.5"><div class="w-4 h-4 rounded bg-amber-400 opacity-80"></div>Linked, not tested</div>
+        <div class="flex items-center gap-1.5"><div class="w-4 h-4 rounded bg-red-400 opacity-80"></div>Failing</div>
+        <div class="flex items-center gap-1.5"><div class="w-4 h-4 rounded bg-slate-200"></div>No link</div>
+      </div>
+
+      <div class="p-8 overflow-x-auto">
+        <div class="bg-white border border-slate-200 rounded-xl overflow-hidden min-w-max">
+          <table class="text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-800 text-white">
+                <th class="text-left px-4 py-3 w-48 font-medium sticky left-0 bg-slate-800 z-10">Business Requirement</th>
+                <th class="px-3 py-3 w-24 font-medium text-center">TR-001<br/><span class="text-slate-400 font-normal">Auth Session</span></th>
+                <th class="px-3 py-3 w-24 font-medium text-center">TR-002<br/><span class="text-slate-400 font-normal">OAuth Login</span></th>
+                <th class="px-3 py-3 w-24 font-medium text-center">TR-003<br/><span class="text-slate-400 font-normal">JWT Tokens</span></th>
+                <th class="px-3 py-3 w-24 font-medium text-center">TR-009<br/><span class="text-slate-400 font-normal">Search API</span></th>
+                <th class="px-3 py-3 w-24 font-medium text-center">TR-010<br/><span class="text-slate-400 font-normal">Filters</span></th>
+                <th class="px-3 py-3 w-24 font-medium text-center">TR-011<br/><span class="text-slate-400 font-normal">Cart State</span></th>
+                <th class="px-3 py-3 w-24 font-medium text-center">TR-018<br/><span class="text-slate-400 font-normal">Payment</span></th>
+                <th class="px-3 py-3 w-24 font-medium text-center">TR-021<br/><span class="text-slate-400 font-normal">Coupons</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="border-b border-slate-100">
+                <td class="px-4 py-3 sticky left-0 bg-white border-r border-slate-100 font-medium text-slate-700">
+                  <div class="text-xs font-mono text-slate-400 mb-0.5">BR-001</div>
+                  User Auth
+                </td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-emerald-500 opacity-90 tooltip" data-tip="TC-001, TC-002 · Pass"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-emerald-500 opacity-90 tooltip" data-tip="TC-003 · Pass"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-amber-400 opacity-90 tooltip" data-tip="No test runs yet"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+              </tr>
+              <tr class="border-b border-slate-100 bg-slate-50">
+                <td class="px-4 py-3 sticky left-0 bg-slate-50 border-r border-slate-100 font-medium text-slate-700">
+                  <div class="text-xs font-mono text-slate-400 mb-0.5">BR-002</div>
+                  Product Catalog
+                </td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-red-400 opacity-90 tooltip" data-tip="TC-015 · Fail"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-amber-400 opacity-90 tooltip" data-tip="TC-018 · Not run"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+              </tr>
+              <tr class="border-b border-slate-100">
+                <td class="px-4 py-3 sticky left-0 bg-white border-r border-slate-100 font-medium text-slate-700">
+                  <div class="text-xs font-mono text-slate-400 mb-0.5">BR-003</div>
+                  Shopping Cart
+                </td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-amber-400 opacity-90 tooltip" data-tip="TC-058 · Skipped"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+              </tr>
+              <tr class="border-b border-slate-100 bg-slate-50">
+                <td class="px-4 py-3 sticky left-0 bg-slate-50 border-r border-slate-100 font-medium text-slate-700">
+                  <div class="text-xs font-mono text-slate-400 mb-0.5">BR-004</div>
+                  Checkout & Payment
+                </td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-emerald-500 opacity-90 tooltip" data-tip="TC-042 · Pass"></div></td>
+                <td class="px-3 py-3 text-center"><div class="w-7 h-7 rounded mx-auto bg-amber-400 opacity-90 tooltip" data-tip="TC-044 · Not run"></div></td>
+              </tr>
+              <tr class="border-b border-slate-100">
+                <td class="px-4 py-3 sticky left-0 bg-red-50 border-r border-slate-100 font-medium text-slate-700">
+                  <div class="text-xs font-mono text-slate-400 mb-0.5">BR-005</div>
+                  <span class="text-red-700">Order Tracking</span>
+                  <span class="ml-1 badge bg-red-100 text-red-600">Gap</span>
+                </td>
+                <td class="px-3 py-3 text-center bg-red-50"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center bg-red-50"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center bg-red-50"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center bg-red-50"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center bg-red-50"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center bg-red-50"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center bg-red-50"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+                <td class="px-3 py-3 text-center bg-red-50"><div class="w-7 h-7 rounded mx-auto bg-slate-200"></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="text-xs text-slate-400 mt-3">Hover over a cell to see linked test cases. Red rows indicate BRs with no TR links (coverage gap).</p>
+      </div>
+    </div>
+
+    <!-- ══ SCREEN: Capacity ═══════════════════════════════════════ -->
+    <div id="screen-capacity" class="screen">
+      <div class="px-8 py-6 border-b border-slate-200 bg-white flex items-center justify-between">
+        <div>
+          <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+            <span>E-Commerce Platform</span><span>/</span><span>Capacity</span>
+          </div>
+          <h1 class="text-xl font-semibold text-slate-900">Capacity Planning</h1>
+        </div>
+        <button class="btn-primary">+ New Sprint</button>
+      </div>
+
+      <div class="p-8 space-y-6">
+        <!-- Sprint header -->
+        <div class="bg-white border border-slate-200 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="font-semibold text-slate-900">Sprint 4 — Apr 1–14, 2026</h2>
+              <p class="text-sm text-slate-500 mt-0.5">Active · 10 days remaining</p>
+            </div>
+            <div class="flex items-center gap-4 text-sm text-slate-600">
+              <div class="text-center">
+                <p class="text-xl font-bold text-slate-900">34</p>
+                <p class="text-xs text-slate-400">Planned pts</p>
+              </div>
+              <div class="text-center">
+                <p class="text-xl font-bold text-emerald-600">14</p>
+                <p class="text-xs text-slate-400">Done</p>
+              </div>
+              <div class="text-center">
+                <p class="text-xl font-bold text-amber-500">20</p>
+                <p class="text-xs text-slate-400">Remaining</p>
+              </div>
+            </div>
+          </div>
+          <!-- Burndown bar -->
+          <div class="w-full bg-slate-100 rounded-full h-3">
+            <div class="bg-primary-700 h-3 rounded-full" style="width:41%"></div>
+          </div>
+          <p class="text-xs text-slate-400 mt-1.5">41% complete</p>
+        </div>
+
+        <!-- Assignee workload -->
+        <div class="bg-white border border-slate-200 rounded-xl p-5">
+          <h2 class="font-semibold text-slate-800 text-sm mb-4">Assignee Workload</h2>
+          <div class="space-y-4">
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-full bg-primary-800 flex items-center justify-center text-white text-xs">K</div>
+                  <span class="text-sm font-medium text-slate-700">Kiri Rattanak</span>
+                  <span class="badge bg-slate-100 text-slate-500">PM</span>
+                </div>
+                <span class="text-sm text-slate-600">8 / 10 pts</span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-2.5">
+                <div class="bg-primary-700 h-2.5 rounded-full" style="width:80%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-full bg-slate-400 flex items-center justify-center text-white text-xs">A</div>
+                  <span class="text-sm font-medium text-slate-700">Alex Morn</span>
+                  <span class="badge bg-slate-100 text-slate-500">Dev</span>
+                </div>
+                <span class="text-sm text-slate-600">14 / 12 pts</span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-2.5">
+                <div class="bg-red-500 h-2.5 rounded-full" style="width:100%"></div>
+              </div>
+              <p class="text-xs text-red-500 mt-0.5">Overallocated by 2 pts</p>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-full bg-emerald-600 flex items-center justify-center text-white text-xs">T</div>
+                  <span class="text-sm font-medium text-slate-700">Thida Keo</span>
+                  <span class="badge bg-slate-100 text-slate-500">Tester</span>
+                </div>
+                <span class="text-sm text-slate-600">6 / 10 pts</span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-2.5">
+                <div class="bg-emerald-500 h-2.5 rounded-full" style="width:60%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Task list -->
+        <div class="bg-white border border-slate-200 rounded-xl p-5">
+          <h2 class="font-semibold text-slate-800 text-sm mb-4">Sprint Tasks</h2>
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-slate-100">
+                <th class="text-left pb-2 text-xs font-medium text-slate-500">Task</th>
+                <th class="text-left pb-2 text-xs font-medium text-slate-500 w-32">Linked To</th>
+                <th class="text-left pb-2 text-xs font-medium text-slate-500 w-24">Assignee</th>
+                <th class="text-left pb-2 text-xs font-medium text-slate-500 w-16">Points</th>
+                <th class="text-left pb-2 text-xs font-medium text-slate-500 w-24">Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50">
+              <tr>
+                <td class="py-2.5 font-medium text-slate-700">Implement OAuth2 login flow</td>
+                <td class="py-2.5 text-xs font-mono text-slate-500">BR-001 / TR-002</td>
+                <td class="py-2.5 text-slate-600">Alex M.</td>
+                <td class="py-2.5 text-slate-600">5</td>
+                <td class="py-2.5"><span class="badge bg-emerald-100 text-emerald-700">Done</span></td>
+              </tr>
+              <tr>
+                <td class="py-2.5 font-medium text-slate-700">Fix search result ranking bug</td>
+                <td class="py-2.5 text-xs font-mono text-slate-500">BR-002 / TR-009</td>
+                <td class="py-2.5 text-slate-600">Alex M.</td>
+                <td class="py-2.5 text-slate-600">3</td>
+                <td class="py-2.5"><span class="badge bg-blue-100 text-blue-700">In Progress</span></td>
+              </tr>
+              <tr>
+                <td class="py-2.5 font-medium text-slate-700">Write test cases for cart edge cases</td>
+                <td class="py-2.5 text-xs font-mono text-slate-500">BR-003 / TR-011</td>
+                <td class="py-2.5 text-slate-600">Thida K.</td>
+                <td class="py-2.5 text-slate-600">3</td>
+                <td class="py-2.5"><span class="badge bg-blue-100 text-blue-700">In Progress</span></td>
+              </tr>
+              <tr>
+                <td class="py-2.5 font-medium text-slate-700">Coupon code validation logic</td>
+                <td class="py-2.5 text-xs font-mono text-slate-500">BR-004 / TR-021</td>
+                <td class="py-2.5 text-slate-600">Alex M.</td>
+                <td class="py-2.5 text-slate-600">5</td>
+                <td class="py-2.5"><span class="badge bg-slate-100 text-slate-500">Todo</span></td>
+              </tr>
+              <tr>
+                <td class="py-2.5 font-medium text-slate-700">Document BR-005 requirements</td>
+                <td class="py-2.5 text-xs font-mono text-slate-500">BR-005</td>
+                <td class="py-2.5 text-slate-600">Kiri R.</td>
+                <td class="py-2.5 text-slate-600">2</td>
+                <td class="py-2.5"><span class="badge bg-slate-100 text-slate-500">Todo</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  function show(screen) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('screen-' + screen).classList.add('active');
+    const map = {
+      'all-projects': 0, 'dashboard': 1,
+      'requirements': 2, 'test-cases': 3, 'rtm': 4, 'capacity': 5
+    };
+    document.querySelectorAll('.nav-item')[map[screen]]?.classList.add('active');
+  }
+</script>
+
+</body>
+</html>
