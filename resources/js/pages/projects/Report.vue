@@ -3,10 +3,8 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem, type RequirementStatus, type TaskStatus, type TestRunStatus } from '@/types';
 import { Head } from '@inertiajs/vue3';
 import { Doughnut } from 'vue-chartjs';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { doughnutOptions } from '@/composables/useChartSetup';
 import { computed } from 'vue';
-
-ChartJS.register(ArcElement, Tooltip, Legend);
 
 const props = defineProps<{
     project: { id: number; name: string };
@@ -40,14 +38,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Reports', href: '#' },
 ];
 
-const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-        legend: { position: 'bottom' as const },
-    },
-    cutout: '65%',
-};
+const chartOptions = { ...doughnutOptions, cutout: '65%' };
 
 const brChartData = computed(() => ({
     labels: ['Draft', 'In Review', 'Approved', 'Implemented', 'Deprecated'],

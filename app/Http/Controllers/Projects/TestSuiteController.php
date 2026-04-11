@@ -139,23 +139,20 @@ class TestSuiteController extends Controller
             ];
         });
 
-        // Summary counts across all TCs in the suite
-        $allRuns = collect();
-        foreach ($testSuite->businessRequirements as $br) {
-            foreach ($br->technicalRequirements as $tr) {
-                foreach ($tr->testCases as $tc) {
-                    $allRuns->push($tc->runs->first()?->status?->value ?? 'not_run');
-                }
-            }
-        }
+        $runStatuses = $brs->flatMap(
+            fn ($br) => collect($br['trs'])->flatMap(
+                fn ($tr) => collect($tr['test_cases'])->pluck('latest_run')
+            )
+        )->map(fn ($s) => $s ?? 'not_run');
 
+        $counts  = $runStatuses->countBy()->toArray();
         $summary = [
-            'total'   => $allRuns->count(),
-            'pass'    => $allRuns->filter(fn ($s) => $s === 'pass')->count(),
-            'fail'    => $allRuns->filter(fn ($s) => $s === 'fail')->count(),
-            'blocked' => $allRuns->filter(fn ($s) => $s === 'blocked')->count(),
-            'skipped' => $allRuns->filter(fn ($s) => $s === 'skipped')->count(),
-            'not_run' => $allRuns->filter(fn ($s) => $s === 'not_run')->count(),
+            'total'   => $runStatuses->count(),
+            'pass'    => $counts['pass']    ?? 0,
+            'fail'    => $counts['fail']    ?? 0,
+            'blocked' => $counts['blocked'] ?? 0,
+            'skipped' => $counts['skipped'] ?? 0,
+            'not_run' => $counts['not_run'] ?? 0,
         ];
 
         return Inertia::render('projects/test-suites/Show', [

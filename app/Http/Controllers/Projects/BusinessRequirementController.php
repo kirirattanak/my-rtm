@@ -28,11 +28,7 @@ class BusinessRequirementController extends Controller
             ->paginate(25)
             ->through(fn ($br) => BusinessRequirementResource::list($br));
 
-        $statusCounts = $project->businessRequirements()
-            ->selectRaw('status, count(*) as count')
-            ->groupBy('status')
-            ->pluck('count', 'status')
-            ->toArray();
+        $statusCounts = $project->businessRequirements()->statusCounts()->toArray();
 
         return Inertia::render('projects/requirements/BrIndex', [
             'project'      => $project->only('id', 'name'),

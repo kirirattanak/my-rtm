@@ -4,10 +4,8 @@ import Pagination from '@/components/Pagination.vue';
 import { type BreadcrumbItem, type Paginator, type TrListItem, type RequirementStatus } from '@/types';
 import { Head, Link } from '@inertiajs/vue3';
 import { Doughnut } from 'vue-chartjs';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { doughnutOptions } from '@/composables/useChartSetup';
 import { computed } from 'vue';
-
-ChartJS.register(ArcElement, Tooltip, Legend);
 
 const props = defineProps<{
     project: { id: number; name: string };
@@ -30,15 +28,6 @@ const statusChartData = computed(() => ({
         borderWidth: 0,
     }],
 }));
-
-const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-        legend: { position: 'bottom' as const },
-    },
-    cutout: '60%',
-};
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Projects', href: '/projects' },
@@ -92,7 +81,7 @@ const typeClass: Record<string, string> = {
             <div v-if="trs.total > 0" class="bg-white rounded-xl border border-slate-200 p-4">
                 <h2 class="text-sm font-semibold text-slate-700 mb-3">Status Distribution</h2>
                 <div style="height: 180px; max-width: 280px;">
-                    <Doughnut :data="statusChartData" :options="chartOptions" />
+                    <Doughnut :data="statusChartData" :options="doughnutOptions" />
                 </div>
             </div>
 

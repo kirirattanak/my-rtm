@@ -6,6 +6,7 @@ use App\Enums\BrPriority;
 use App\Enums\EffortUnit;
 use App\Enums\TaskCategory;
 use App\Enums\TaskStatus;
+use App\Models\Concerns\HasStatusCounts;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 class Task extends Model
 {
-    use HasFactory;
+    use HasFactory, HasStatusCounts;
 
     protected $fillable = [
         'project_id',

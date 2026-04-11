@@ -15,34 +15,15 @@ class ReportController extends Controller
     {
         $this->authorize('view', $project);
 
-        // ── Business Requirements ──────────────────────────────────────────────
-        $brStatusCounts = $project->businessRequirements()
-            ->selectRaw('status, count(*) as count')
-            ->groupBy('status')
-            ->pluck('count', 'status')
-            ->toArray();
+        $brStatusCounts = $project->businessRequirements()->statusCounts()->toArray();
+        $brTotal        = array_sum($brStatusCounts);
 
-        $brTotal = array_sum($brStatusCounts);
+        $trStatusCounts = $project->technicalRequirements()->statusCounts()->toArray();
+        $trTotal        = array_sum($trStatusCounts);
 
-        // ── Technical Requirements ─────────────────────────────────────────────
-        $trStatusCounts = $project->technicalRequirements()
-            ->selectRaw('status, count(*) as count')
-            ->groupBy('status')
-            ->pluck('count', 'status')
-            ->toArray();
+        $tcStatusCounts = $project->testCases()->statusCounts()->toArray();
+        $tcTotal        = array_sum($tcStatusCounts);
 
-        $trTotal = array_sum($trStatusCounts);
-
-        // ── Test Cases ─────────────────────────────────────────────────────────
-        $tcStatusCounts = $project->testCases()
-            ->selectRaw('status, count(*) as count')
-            ->groupBy('status')
-            ->pluck('count', 'status')
-            ->toArray();
-
-        $tcTotal = array_sum($tcStatusCounts);
-
-        // Latest run result per test case (most recent run)
         $latestRunCounts = DB::table('test_runs')
             ->selectRaw('status, count(*) as count')
             ->whereIn('test_case_id', $project->testCases()->select('id'))
@@ -57,14 +38,8 @@ class ReportController extends Controller
 
         $notRunCount = $tcTotal - array_sum($latestRunCounts);
 
-        // ── Tasks ──────────────────────────────────────────────────────────────
-        $taskStatusCounts = $project->tasks()
-            ->selectRaw('status, count(*) as count')
-            ->groupBy('status')
-            ->pluck('count', 'status')
-            ->toArray();
-
-        $taskTotal = array_sum($taskStatusCounts);
+        $taskStatusCounts = $project->tasks()->statusCounts()->toArray();
+        $taskTotal        = array_sum($taskStatusCounts);
 
         $overdueCount = $project->tasks()
             ->whereNotIn('status', ['done', 'cancelled'])
@@ -72,7 +47,6 @@ class ReportController extends Controller
             ->where('due_date', '<', now()->toDateString())
             ->count();
 
-        // ── Coverage (reuse existing logic) ───────────────────────────────────
         $trs = $project->technicalRequirements()
             ->withExists([
                 'runs as has_passing_run' => fn ($q) => $q->where('status', 'pass'),

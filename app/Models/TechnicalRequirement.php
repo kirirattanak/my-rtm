@@ -4,16 +4,17 @@ namespace App\Models;
 
 use App\Enums\RequirementStatus;
 use App\Enums\TrType;
+use App\Models\Concerns\HasStatusCounts;
+use App\Models\TestCase;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\TestCase;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class TechnicalRequirement extends Model
 {
-    use HasFactory;
+    use HasFactory, HasStatusCounts;
 
     protected $fillable = [
         'project_id',

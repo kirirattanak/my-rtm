@@ -42,12 +42,12 @@ class TaskObserver
             ],
         ]);
 
-        // Notify newly assigned user (but not if they assigned it to themselves)
         if (
             array_key_exists('assignee_id', $changed) &&
             $task->assignee_id &&
             $task->assignee_id !== Auth::id()
         ) {
+            $task->loadMissing('assignee', 'project');
             $task->assignee->notify(new TaskAssignedNotification($task, Auth::user()));
         }
     }
