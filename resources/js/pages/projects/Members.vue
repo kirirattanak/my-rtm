@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { type BreadcrumbItem, type ProjectMember, type UserRole, USER_ROLE_LABELS } from '@/types';
+import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
+type MemberRow = { id: number; user_id: number; name: string; email: string; role_id: number | null; role_name: string | null };
+type RoleOption = { id: number; name: string };
+
 const props = defineProps<{
     project: { id: number; name: string };
-    members: ProjectMember[];
+    members: MemberRow[];
     addable_users: { id: number; name: string; email: string }[];
-    roles: { value: UserRole; label: string }[];
+    roles: RoleOption[];
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -17,7 +20,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Members', href: route('projects.members.index', props.project.id) },
 ];
 
-const addForm = useForm({ user_id: '', role: 'viewer' as UserRole });
+const addForm = useForm({ user_id: '' as string | number, role_id: props.roles[0]?.id ?? null as number | null });
 
 function addMember() {
     addForm.post(route('projects.members.store', props.project.id), {
@@ -26,33 +29,24 @@ function addMember() {
 }
 
 const editingId = ref<number | null>(null);
-const editRole = ref<UserRole>('viewer');
+const editRoleId = ref<number | null>(null);
 
-function startEdit(member: ProjectMember) {
+function startEdit(member: MemberRow) {
     editingId.value = member.id;
-    editRole.value = member.role;
+    editRoleId.value = member.role_id;
 }
 
-function saveRole(member: ProjectMember) {
+function saveRole(member: MemberRow) {
     router.patch(route('projects.members.update', { project: props.project.id, member: member.id }), {
-        role: editRole.value,
+        role_id: editRoleId.value,
     }, { onSuccess: () => { editingId.value = null; } });
 }
 
-function removeMember(member: ProjectMember) {
+function removeMember(member: MemberRow) {
     if (confirm(`Remove ${member.name} from this project?`)) {
         router.delete(route('projects.members.destroy', { project: props.project.id, member: member.id }));
     }
 }
-
-const roleColors: Record<string, string> = {
-    admin:            'bg-red-100 text-red-700',
-    project_manager:  'bg-violet-100 text-violet-700',
-    business_analyst: 'bg-blue-100 text-blue-700',
-    developer:        'bg-emerald-100 text-emerald-700',
-    tester:           'bg-amber-100 text-amber-700',
-    viewer:           'bg-slate-100 text-slate-500',
-};
 </script>
 
 <template>
@@ -87,9 +81,9 @@ const roleColors: Record<string, string> = {
                     </div>
                     <div class="w-48">
                         <label class="block text-xs font-medium text-slate-600 mb-1">Role</label>
-                        <select v-model="addForm.role"
+                        <select v-model="addForm.role_id"
                             class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/50">
-                            <option v-for="r in roles" :key="r.value" :value="r.value">{{ r.label }}</option>
+                            <option v-for="r in roles" :key="r.id" :value="r.id">{{ r.name }}</option>
                         </select>
                     </div>
                     <button type="submit" :disabled="addForm.processing || !addForm.user_id"
@@ -131,18 +125,17 @@ const roleColors: Record<string, string> = {
                             </td>
                             <td class="px-4 py-3">
                                 <div v-if="editingId === member.id" class="flex items-center gap-2">
-                                    <select v-model="editRole"
+                                    <select v-model="editRoleId"
                                         class="border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/50">
-                                        <option v-for="r in roles" :key="r.value" :value="r.value">{{ r.label }}</option>
+                                        <option v-for="r in roles" :key="r.id" :value="r.id">{{ r.name }}</option>
                                     </select>
                                     <button @click="saveRole(member)" class="text-xs text-emerald-600 font-medium hover:underline">Save</button>
                                     <button @click="editingId = null" class="text-xs text-slate-400 hover:underline">Cancel</button>
                                 </div>
                                 <span v-else
-                                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer"
-                                    :class="roleColors[member.role]"
+                                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 cursor-pointer"
                                     @click="startEdit(member)">
-                                    {{ USER_ROLE_LABELS[member.role] }}
+                                    {{ member.role_name ?? '—' }}
                                 </span>
                             </td>
                             <td class="px-4 py-3">

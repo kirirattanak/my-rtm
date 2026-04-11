@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\UserRole;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -20,7 +19,6 @@ class Invitation extends Model
     protected function casts(): array
     {
         return [
-            'role'        => UserRole::class,
             'accepted_at' => 'datetime',
             'expires_at'  => 'datetime',
         ];

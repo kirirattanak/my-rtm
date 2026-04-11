@@ -15,9 +15,16 @@ use App\Models\Sprint;
 use App\Models\Task;
 use App\Observers\TaskLogObserver;
 use App\Observers\TaskObserver;
+use App\Models\Project;
+use App\Models\User;
+use App\Policies\BusinessRequirementPolicy;
 use App\Policies\CommentPolicy;
+use App\Policies\ProjectPolicy;
 use App\Policies\SprintPolicy;
 use App\Policies\TaskPolicy;
+use App\Policies\TechnicalRequirementPolicy;
+use App\Policies\TestCasePolicy;
+use App\Policies\UserPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -43,8 +50,13 @@ class AppServiceProvider extends ServiceProvider
         Task::observe(TaskObserver::class);
         TaskLog::observe(TaskLogObserver::class);
 
+        Gate::policy(BusinessRequirement::class, BusinessRequirementPolicy::class);
         Gate::policy(Comment::class, CommentPolicy::class);
+        Gate::policy(Project::class, ProjectPolicy::class);
         Gate::policy(Sprint::class, SprintPolicy::class);
         Gate::policy(Task::class, TaskPolicy::class);
+        Gate::policy(TechnicalRequirement::class, TechnicalRequirementPolicy::class);
+        Gate::policy(TestCase::class, TestCasePolicy::class);
+        Gate::policy(User::class, UserPolicy::class);
     }
 }

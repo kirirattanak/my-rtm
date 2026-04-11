@@ -32,29 +32,13 @@ export interface SharedData {
     };
 }
 
-export type UserRole =
-    | 'admin'
-    | 'project_manager'
-    | 'business_analyst'
-    | 'developer'
-    | 'tester'
-    | 'viewer';
-
-export const USER_ROLE_LABELS: Record<UserRole, string> = {
-    admin:            'Admin',
-    project_manager:  'Project Manager',
-    business_analyst: 'Business Analyst',
-    developer:        'Developer',
-    tester:           'Tester',
-    viewer:           'Viewer',
-};
-
 export interface User {
     id: number;
     name: string;
     email: string;
     avatar?: string;
-    role: UserRole;
+    role_id: number | null;
+    role_name: string | null;
     is_active: boolean;
     email_verified_at: string | null;
     created_at: string;
@@ -64,8 +48,7 @@ export interface User {
 export interface Invitation {
     id: number;
     email: string;
-    role: UserRole;
-    role_label: string;
+    role: string;
     invited_by: string;
     status: 'pending' | 'accepted' | 'expired';
     expires_at: string;
@@ -79,8 +62,8 @@ export interface ProjectMember {
     user_id: number;
     name: string;
     email: string;
-    role: UserRole;
-    role_label: string;
+    role_id: number | null;
+    role_name: string | null;
 }
 
 export interface Project {

@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use App\Enums\ProjectStatus;
-use App\Enums\UserRole;
 use App\Models\Project;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -19,6 +19,8 @@ class ProjectSeeder extends Seeder
         $tester = User::where('email', 'tester@rtm.test')->first();
         $viewer = User::where('email', 'viewer@rtm.test')->first();
 
+        $roles = Role::pluck('id', 'slug');
+
         // Project 1 — Active
         $ecommerce = Project::create([
             'name'        => 'E-Commerce Platform',
@@ -30,11 +32,11 @@ class ProjectSeeder extends Seeder
         ]);
 
         $ecommerce->projectMembers()->createMany([
-            ['user_id' => $pm->id,     'role' => UserRole::ProjectManager],
-            ['user_id' => $ba->id,     'role' => UserRole::BusinessAnalyst],
-            ['user_id' => $dev->id,    'role' => UserRole::Developer],
-            ['user_id' => $tester->id, 'role' => UserRole::Tester],
-            ['user_id' => $viewer->id, 'role' => UserRole::Viewer],
+            ['user_id' => $pm->id,     'role_id' => $roles['project_manager']],
+            ['user_id' => $ba->id,     'role_id' => $roles['business_analyst']],
+            ['user_id' => $dev->id,    'role_id' => $roles['developer']],
+            ['user_id' => $tester->id, 'role_id' => $roles['tester']],
+            ['user_id' => $viewer->id, 'role_id' => $roles['viewer']],
         ]);
 
         // Project 2 — On Hold
@@ -48,9 +50,9 @@ class ProjectSeeder extends Seeder
         ]);
 
         $banking->projectMembers()->createMany([
-            ['user_id' => $admin->id,  'role' => UserRole::ProjectManager],
-            ['user_id' => $dev->id,    'role' => UserRole::Developer],
-            ['user_id' => $tester->id, 'role' => UserRole::Tester],
+            ['user_id' => $admin->id,  'role_id' => $roles['project_manager']],
+            ['user_id' => $dev->id,    'role_id' => $roles['developer']],
+            ['user_id' => $tester->id, 'role_id' => $roles['tester']],
         ]);
 
         // Project 3 — Active
@@ -64,9 +66,9 @@ class ProjectSeeder extends Seeder
         ]);
 
         $hr->projectMembers()->createMany([
-            ['user_id' => $pm->id,  'role' => UserRole::ProjectManager],
-            ['user_id' => $ba->id,  'role' => UserRole::BusinessAnalyst],
-            ['user_id' => $dev->id, 'role' => UserRole::Developer],
+            ['user_id' => $pm->id,  'role_id' => $roles['project_manager']],
+            ['user_id' => $ba->id,  'role_id' => $roles['business_analyst']],
+            ['user_id' => $dev->id, 'role_id' => $roles['developer']],
         ]);
     }
 }

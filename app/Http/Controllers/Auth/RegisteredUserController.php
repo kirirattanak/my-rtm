@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\Invitation;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -31,7 +32,7 @@ class RegisteredUserController extends Controller
             'invitation' => $invitation ? [
                 'token' => $invitation->token,
                 'email' => $invitation->email,
-                'role'  => $invitation->role->value,
+                'role'  => $invitation->role,
             ] : null,
         ]);
     }
@@ -45,7 +46,7 @@ class RegisteredUserController extends Controller
         ]);
 
         $invitation = null;
-        $role = 'viewer';
+        $roleId = Role::where('slug', 'viewer')->value('id');
 
         if ($request->filled('invitation_token')) {
             $invitation = Invitation::where('token', $request->invitation_token)
@@ -55,7 +56,7 @@ class RegisteredUserController extends Controller
                 ->first();
 
             if ($invitation) {
-                $role = $invitation->role->value;
+                $roleId = Role::where('slug', $invitation->role)->value('id') ?? $roleId;
             }
         }
 
@@ -63,7 +64,7 @@ class RegisteredUserController extends Controller
             'name'     => $request->name,
             'email'    => $request->email,
             'password' => Hash::make($request->password),
-            'role'     => $role,
+            'role_id'  => $roleId,
         ]);
 
         if ($invitation) {

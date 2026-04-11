@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Enums\ProjectStatus;
-use App\Enums\UserRole;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -40,7 +39,7 @@ class Project extends Model
     public function members(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'project_members')
-            ->withPivot('role')
+            ->withPivot('role_id')
             ->withTimestamps();
     }
 
@@ -49,10 +48,11 @@ class Project extends Model
         return $this->hasMany(ProjectMember::class);
     }
 
-    public function memberRole(User $user): ?UserRole
+    public function memberRole(User $user): ?Role
     {
         $member = $this->projectMembers()
             ->where('user_id', $user->id)
+            ->with('role')
             ->first();
 
         return $member?->role;
