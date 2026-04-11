@@ -4,6 +4,8 @@
 
 The RTM application is developed across 8 milestones. **v0.1 covers Milestones 1–8 in full**, with a small set of Milestone 7 features deferred to v0.2 (coverage trend chart, sprint progress report, notifications, and PDF/Excel export).
 
+**v0.2** adds configurable role-based permissions (Milestone 9) and the remaining Milestone 7 features (Milestone 10).
+
 ---
 
 ## Milestone 1 — Foundation & Auth ✅
@@ -198,8 +200,150 @@ Feature test suite under `tests/Feature/Projects/` covering all major controller
 
 ---
 
+## Milestone 9 — Configurable Role-Based Permissions
+
+**Goal:** Replace hardcoded role-permission checks with a database-driven permission system that admins can configure. Admins can define custom roles and control exactly what each role can view and do across the application.
+
+---
+
+### 9.1 — Data Model
+
+**New tables:**
+
+`roles` — stores both built-in and custom roles
+- `id`, `name`, `is_system` (bool — built-in roles cannot be renamed or deleted), `created_by`, `timestamps`
+
+`permissions` — the fixed set of all available permission keys
+- `id`, `key` (e.g. `br.create`), `label`, `group`
+
+`role_permissions` — which permissions each role holds
+- `role_id`, `permission_id`
+
+**Schema changes:**
+- `users.role` (enum) → `users.role_id` (FK → roles)
+- `project_members.role` (enum) → `project_members.role_id` (FK → roles)
+
+---
+
+### 9.2 — Built-in Roles & Seeded Defaults
+
+The 6 existing roles are seeded as system roles (`is_system = true`). The Admin role always bypasses all permission checks (superuser) and cannot be modified.
+
+Default permission matrix:
+
+| Permission | PM | BA | Developer | Tester | Viewer |
+|---|---|---|---|---|---|
+| br.view | ✅ | ✅ | ✅ | ✅ | ✅ |
+| br.create, edit, delete | ✅ | ✅ | | | |
+| br.change_status | ✅ | ✅ | | | |
+| br.import, export | ✅ | ✅ | | | |
+| tr.view | ✅ | ✅ | ✅ | ✅ | ✅ |
+| tr.create, edit, delete | ✅ | | ✅ | | |
+| tr.change_status, import, export | ✅ | | ✅ | | |
+| tc.view | ✅ | ✅ | ✅ | ✅ | ✅ |
+| tc.create, edit, delete, import, export | ✅ | | | ✅ | |
+| test_runs.view | ✅ | ✅ | ✅ | ✅ | ✅ |
+| test_runs.create | ✅ | | | ✅ | |
+| test_suites.view | ✅ | ✅ | ✅ | ✅ | ✅ |
+| test_suites.create, delete | ✅ | | | ✅ | |
+| tasks.view | ✅ | ✅ | ✅ | ✅ | ✅ |
+| tasks.create, edit, delete | ✅ | | ✅ | ✅ | |
+| tasks.change_status | ✅ | | ✅ | ✅ | |
+| sprints.view | ✅ | ✅ | ✅ | ✅ | ✅ |
+| sprints.create, edit, delete | ✅ | | | | |
+| rtm.view | ✅ | ✅ | ✅ | ✅ | ✅ |
+| rtm.export | ✅ | ✅ | | | |
+| reports.view | ✅ | ✅ | | ✅ | |
+| reports.export | ✅ | ✅ | | | |
+| coverage.view | ✅ | ✅ | ✅ | ✅ | ✅ |
+| members.view | ✅ | ✅ | ✅ | ✅ | ✅ |
+| members.manage | ✅ | | | | |
+| projects.create, edit, archive | ✅ | | | | |
+
+---
+
+### 9.3 — Permission Keys (full list)
+
+| Group | Keys |
+|---|---|
+| Business Requirements | `br.view` `br.create` `br.edit` `br.delete` `br.change_status` `br.import` `br.export` |
+| Technical Requirements | `tr.view` `tr.create` `tr.edit` `tr.delete` `tr.change_status` `tr.import` `tr.export` |
+| Test Cases | `tc.view` `tc.create` `tc.edit` `tc.delete` `tc.import` `tc.export` |
+| Test Runs | `test_runs.view` `test_runs.create` |
+| Test Suites | `test_suites.view` `test_suites.create` `test_suites.delete` |
+| Tasks | `tasks.view` `tasks.create` `tasks.edit` `tasks.delete` `tasks.change_status` |
+| Sprints | `sprints.view` `sprints.create` `sprints.edit` `sprints.delete` |
+| RTM | `rtm.view` `rtm.export` |
+| Reports | `reports.view` `reports.export` |
+| Coverage | `coverage.view` |
+| Members | `members.view` `members.manage` |
+| Projects | `projects.create` `projects.edit` `projects.archive` |
+
+---
+
+### 9.4 — Permission Resolution
+
+A `hasPermission(string $key): bool` method on the `User` model resolves the user's effective role (project-level override → global role) and checks the cached `role_permissions` set. The permission set per role is cached to avoid repeated DB lookups.
+
+All existing Policy classes replace hardcoded role-name checks with `$user->hasPermission('key')` calls.
+
+---
+
+### 9.5 — Custom Roles
+
+Admins can create custom roles with any name and assign any combination of permissions. Custom roles behave identically to built-in roles and can be assigned to users and project members. Custom roles can be renamed or deleted (deletion blocked if any users are currently assigned).
+
+---
+
+### 9.6 — Admin UI
+
+**Roles list** (`/admin/roles`)
+- Table of all roles with member count and system/custom badge
+- Create new role button
+- Edit name (custom only), delete (custom only, unassigned only)
+
+**Permission matrix** (`/admin/roles/{role}/permissions`)
+- Permissions grouped by resource, toggle checkboxes per permission
+- Changes saved atomically (replaces the full permission set for the role)
+- Admin role shown as read-only (superuser — all permissions always on)
+
+---
+
+### 9.7 — Implementation Sequence
+
+1. Migrations: `roles`, `permissions`, `role_permissions` tables; alter `users.role` and `project_members.role` to FK columns
+2. Seeder: seed 6 built-in roles and the full default permission matrix
+3. `User::hasPermission()` with role-level cache invalidation on permission change
+4. Update all Policy classes to use `hasPermission()`
+5. Admin UI: roles CRUD
+6. Admin UI: permission matrix per role
+
+### Access Rules
+- Only Admins can access role and permission management
+- Admins cannot modify the Admin role's permissions or delete system roles
+
+---
+
+## Milestone 10 — Remaining Reporting Features
+
+**Goal:** Deliver the deferred Milestone 7 reporting and notification features.
+
+### Features
+- **Coverage trend over time** — daily snapshot of BR and TR coverage %; line chart on the project health report page
+- **Sprint progress / burndown report** — planned vs. actual effort chart per sprint
+- **In-app notifications** — bell icon with unread count; notify on assignment, status change, and comment mention
+- **Email notifications** — assignment and overdue item alerts, configurable per user
+- **RTM export** — export the traceability matrix to Excel and PDF
+- **Reports export** — export the project health report to PDF
+
+### Access Rules
+- All members can view reports and receive notifications for their projects
+- Export restricted to roles with `rtm.export` or `reports.export` permission (as configured in Milestone 9)
+
+---
+
 ## Delivery Notes
 
 - v0.1 ships Milestones 1–8 as a fully functional RTM application
-- Deferred Milestone 7 features (notifications, export, trend charts) are tracked for v0.2
+- v0.2 ships Milestones 9–10: configurable permissions and remaining reporting features
 - Auth and roles (Milestone 1) underpin all access rules throughout the application
