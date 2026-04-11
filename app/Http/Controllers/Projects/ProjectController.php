@@ -29,6 +29,7 @@ class ProjectController extends Controller
 
         return Inertia::render('projects/Index', [
             'projects' => $projects,
+            'can'      => ['create' => $user->can('create', Project::class)],
         ]);
     }
 

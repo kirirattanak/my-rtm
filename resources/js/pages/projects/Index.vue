@@ -2,16 +2,18 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import Pagination from '@/components/Pagination.vue';
 import { type BreadcrumbItem, type Paginator, type Project } from '@/types';
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 
-defineProps<{ projects: Paginator<Project> }>();
+const props = defineProps<{
+    projects: Paginator<Project>;
+    can: { create: boolean };
+}>();
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
 ];
 
-const user = (usePage().props as unknown as { auth: { user: { role: string } } }).auth.user;
-const canCreate = ['admin', 'project_manager'].includes(user.role);
+const canCreate = props.can.create;
 
 const statusClasses: Record<string, string> = {
     active:   'bg-emerald-100 text-emerald-700',
