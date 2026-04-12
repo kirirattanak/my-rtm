@@ -67,10 +67,13 @@ function applyListFilters() {
 }
 
 watch(filterSearch, () => {
+    if (activeView.value !== 'list') return;
     if (searchTimer) clearTimeout(searchTimer);
     searchTimer = setTimeout(applyListFilters, 350);
 });
-watch([filterStatus, filterSprintId], applyListFilters);
+watch([filterStatus, filterSprintId], () => {
+    if (activeView.value === 'list') applyListFilters();
+});
 
 // ── Board-mode filters (client-side) ──────────────────────────────────────────
 

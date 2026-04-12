@@ -7,6 +7,7 @@ use App\Enums\RequirementStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Projects\BusinessRequirementRequest;
 use App\Http\Requests\Projects\ImportFileRequest;
+use App\Http\Requests\Projects\RequirementStatusRequest;
 use App\Http\Resources\BusinessRequirementResource;
 use App\Models\BusinessRequirement;
 use App\Models\Project;
@@ -21,6 +22,31 @@ class BusinessRequirementController extends Controller
     {
         $this->authorize('viewAny', [BusinessRequirement::class, $project]);
 
+        $isBoard = $request->input('view') === 'board';
+
+        $statusCounts = $project->businessRequirements()->statusCounts()->toArray();
+
+        $canCreate = $request->user()->can('create', [BusinessRequirement::class, $project]);
+
+        if ($isBoard) {
+            $boardBrs = $project->businessRequirements()
+                ->with('creator:id,name')
+                ->withCount('technicalRequirements')
+                ->withCount('blockedByBrs as blocking_count')
+                ->withExists(['blockedByBrs as is_blocked' => fn ($q) => $q->where('status', '!=', 'implemented')])
+                ->orderByRaw("CASE priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END")
+                ->get()
+                ->map(fn ($br) => BusinessRequirementResource::list($br));
+
+            return Inertia::render('projects/requirements/BrIndex', [
+                'project'      => $project->only('id', 'name'),
+                'brs'          => null,
+                'boardBrs'     => $boardBrs,
+                'statusCounts' => $statusCounts,
+                'can'          => ['create' => $canCreate],
+            ]);
+        }
+
         $brs = $project->businessRequirements()
             ->with('creator:id,name')
             ->withCount('technicalRequirements')
@@ -30,16 +56,22 @@ class BusinessRequirementController extends Controller
             ->paginate(25)
             ->through(fn ($br) => BusinessRequirementResource::list($br));
 
-        $statusCounts = $project->businessRequirements()->statusCounts()->toArray();
-
         return Inertia::render('projects/requirements/BrIndex', [
             'project'      => $project->only('id', 'name'),
             'brs'          => $brs,
+            'boardBrs'     => null,
             'statusCounts' => $statusCounts,
-            'can'          => [
-                'create' => $request->user()->can('create', [BusinessRequirement::class, $project]),
-            ],
+            'can'          => ['create' => $canCreate],
         ]);
+    }
+
+    public function updateStatus(RequirementStatusRequest $request, Project $project, BusinessRequirement $businessRequirement): RedirectResponse
+    {
+        $this->authorize('update', $businessRequirement);
+
+        $businessRequirement->update(['status' => $request->validated()['status']]);
+
+        return back();
     }
 
     public function create(Project $project): Response

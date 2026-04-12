@@ -7,6 +7,7 @@ use App\Enums\RequirementStatus;
 use App\Enums\TestCaseType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Projects\ImportFileRequest;
+use App\Http\Requests\Projects\RequirementStatusRequest;
 use App\Http\Requests\Projects\TestCaseRequest;
 use App\Http\Resources\TestCaseResource;
 use App\Models\Project;
@@ -22,6 +23,25 @@ class TestCaseController extends Controller
     {
         $this->authorize('viewAny', [TestCase::class, $project]);
 
+        $isBoard   = $request->input('view') === 'board';
+        $canCreate = $request->user()->can('create', [TestCase::class, $project]);
+
+        if ($isBoard) {
+            $boardTcs = $project->testCases()
+                ->with(['creator:id,name', 'assignee:id,name', 'runs' => fn ($q) => $q->latest()->limit(1)])
+                ->withCount('runs')
+                ->orderByRaw("CASE priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END")
+                ->get()
+                ->map(fn ($tc) => TestCaseResource::list($tc));
+
+            return Inertia::render('projects/test-cases/Index', [
+                'project'  => $project->only('id', 'name'),
+                'tcs'      => null,
+                'boardTcs' => $boardTcs,
+                'can'      => ['create' => $canCreate],
+            ]);
+        }
+
         $tcs = $project->testCases()
             ->with(['creator:id,name', 'assignee:id,name', 'runs' => fn ($q) => $q->latest()->limit(1)])
             ->withCount('runs')
@@ -30,12 +50,20 @@ class TestCaseController extends Controller
             ->through(fn ($tc) => TestCaseResource::list($tc));
 
         return Inertia::render('projects/test-cases/Index', [
-            'project' => $project->only('id', 'name'),
-            'tcs'     => $tcs,
-            'can'     => [
-                'create' => $request->user()->can('create', [TestCase::class, $project]),
-            ],
+            'project'  => $project->only('id', 'name'),
+            'tcs'      => $tcs,
+            'boardTcs' => null,
+            'can'      => ['create' => $canCreate],
         ]);
+    }
+
+    public function updateStatus(RequirementStatusRequest $request, Project $project, TestCase $testCase): RedirectResponse
+    {
+        $this->authorize('update', $testCase);
+
+        $testCase->update(['status' => $request->validated()['status']]);
+
+        return back();
     }
 
     public function create(Project $project): Response

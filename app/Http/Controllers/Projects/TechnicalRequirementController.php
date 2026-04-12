@@ -6,6 +6,7 @@ use App\Enums\RequirementStatus;
 use App\Enums\TrType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Projects\ImportFileRequest;
+use App\Http\Requests\Projects\RequirementStatusRequest;
 use App\Http\Requests\Projects\TechnicalRequirementRequest;
 use App\Http\Resources\TechnicalRequirementResource;
 use App\Models\Project;
@@ -21,6 +22,28 @@ class TechnicalRequirementController extends Controller
     {
         $this->authorize('viewAny', [TechnicalRequirement::class, $project]);
 
+        $isBoard = $request->input('view') === 'board';
+
+        $statusCounts = $project->technicalRequirements()->statusCounts()->toArray();
+        $canCreate    = $request->user()->can('create', [TechnicalRequirement::class, $project]);
+
+        if ($isBoard) {
+            $boardTrs = $project->technicalRequirements()
+                ->with('creator:id,name')
+                ->withCount('businessRequirements')
+                ->orderBy('number')
+                ->get()
+                ->map(fn ($tr) => TechnicalRequirementResource::list($tr));
+
+            return Inertia::render('projects/requirements/TrIndex', [
+                'project'      => $project->only('id', 'name'),
+                'trs'          => null,
+                'boardTrs'     => $boardTrs,
+                'statusCounts' => $statusCounts,
+                'can'          => ['create' => $canCreate],
+            ]);
+        }
+
         $trs = $project->technicalRequirements()
             ->with('creator:id,name')
             ->withCount('businessRequirements')
@@ -28,16 +51,22 @@ class TechnicalRequirementController extends Controller
             ->paginate(25)
             ->through(fn ($tr) => TechnicalRequirementResource::list($tr));
 
-        $statusCounts = $project->technicalRequirements()->statusCounts()->toArray();
-
         return Inertia::render('projects/requirements/TrIndex', [
             'project'      => $project->only('id', 'name'),
             'trs'          => $trs,
+            'boardTrs'     => null,
             'statusCounts' => $statusCounts,
-            'can'          => [
-                'create' => $request->user()->can('create', [TechnicalRequirement::class, $project]),
-            ],
+            'can'          => ['create' => $canCreate],
         ]);
+    }
+
+    public function updateStatus(RequirementStatusRequest $request, Project $project, TechnicalRequirement $technicalRequirement): RedirectResponse
+    {
+        $this->authorize('update', $technicalRequirement);
+
+        $technicalRequirement->update(['status' => $request->validated()['status']]);
+
+        return back();
     }
 
     public function create(Project $project): Response

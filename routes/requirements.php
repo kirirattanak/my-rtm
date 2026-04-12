@@ -20,6 +20,7 @@ Route::middleware(['auth', 'verified'])->prefix('projects/{project}/requirements
         Route::get('/{businessRequirement}', [BusinessRequirementController::class, 'show'])->name('show');
         Route::get('/{businessRequirement}/edit', [BusinessRequirementController::class, 'edit'])->name('edit');
         Route::patch('/{businessRequirement}', [BusinessRequirementController::class, 'update'])->name('update');
+        Route::patch('/{businessRequirement}/status', [BusinessRequirementController::class, 'updateStatus'])->name('status.update');
         Route::delete('/{businessRequirement}', [BusinessRequirementController::class, 'destroy'])->name('destroy');
 
         // TR links on a BR
@@ -44,6 +45,7 @@ Route::middleware(['auth', 'verified'])->prefix('projects/{project}/requirements
         Route::get('/{technicalRequirement}', [TechnicalRequirementController::class, 'show'])->name('show');
         Route::get('/{technicalRequirement}/edit', [TechnicalRequirementController::class, 'edit'])->name('edit');
         Route::patch('/{technicalRequirement}', [TechnicalRequirementController::class, 'update'])->name('update');
+        Route::patch('/{technicalRequirement}/status', [TechnicalRequirementController::class, 'updateStatus'])->name('status.update');
         Route::delete('/{technicalRequirement}', [TechnicalRequirementController::class, 'destroy'])->name('destroy');
 
         // Comments on a TR
