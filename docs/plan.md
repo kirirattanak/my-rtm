@@ -392,12 +392,13 @@ On the BR show page, a new **Dependencies** panel:
 Page: `GET /projects/{project}/requirements/business/graph` → `BrGraph.vue`
 
 Custom SVG DAG (no external library):
-- **Nodes:** 210×68px rounded rectangles. Fill/stroke colour encodes status. Amber border = blocked; green border = ready (all blockers implemented).
+- **Nodes:** 240×82px rounded rectangles. Fill/stroke colour encodes status. Amber border = blocked; green border = ready (all blockers implemented). Titles word-wrap up to 2 lines (~30 chars each) using SVG `<tspan>` elements — no truncation.
 - **Edges:** cubic bezier curves with SVG arrow markers. Amber = blocker pending; green = blocker implemented.
 - **Layout:** longest-path topological layer assignment; nodes distributed vertically within each layer.
 - **Unlinked BRs:** shown in a separate table below the graph.
 - **Interactions:** hover tooltip (Teleport) showing ref, title, priority, status, and blocked/ready state; click navigates to BR detail.
-- **Legend** bar above the graph explaining status colours and edge/node states.
+- **Legend** embedded inside the SVG (below the graph area) explaining status colours and edge/node border states. Being part of the SVG ensures the legend is included in PNG exports.
+- **Export PNG** button — client-side only; serializes the SVG (with embedded legend and `#f8fafc` background) to a canvas at 2× resolution and triggers a browser download named `br-dependency-graph-{project-name}.png`. Button is hidden when there are no linked nodes.
 
 ---
 

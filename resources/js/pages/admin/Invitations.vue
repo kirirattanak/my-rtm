@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { type BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem } from '@/types';  
 import { Head, router, useForm } from '@inertiajs/vue3';
 
 type InvitationRow = { id: number; email: string; role: string; invited_by: string; status: string; expires_at: string; created_at: string };
@@ -27,7 +27,7 @@ function send() {
     });
 }
 
-function revoke(invitation: Invitation) {
+function revoke(invitation: InvitationRow) {
     router.delete(route('admin.invitations.destroy', invitation.id));
 }
 

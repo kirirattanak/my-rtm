@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
 interface GraphNode {
@@ -22,7 +22,8 @@ interface PositionedNode extends GraphNode {
     y: number;
     layer: number;
     is_blocked: boolean;
-    is_ready: boolean; // no unresolved incoming blockers
+    is_ready: boolean;
+    titleLines: string[];
 }
 
 const props = defineProps<{
@@ -39,11 +40,12 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 // ── Layout constants ────────────────────────────────────────────────
-const NODE_W    = 210;
-const NODE_H    = 68;
-const LAYER_GAP = 280;
-const NODE_GAP  = 90;
-const PAD       = 40;
+const NODE_W     = 240;
+const NODE_H     = 82;
+const LAYER_GAP  = 300;
+const NODE_GAP   = 106;
+const PAD        = 40;
+const LEGEND_H   = 72; // height reserved below the graph for the embedded legend
 
 // ── Status colour maps ───────────────────────────────────────────────
 const statusFill: Record<string, string> = {
@@ -67,23 +69,47 @@ const statusText: Record<string, string> = {
     implemented: '#5b21b6',
     deprecated:  '#b91c1c',
 };
+const statusLabel: Record<string, string> = {
+    draft: 'Draft', review: 'Review', approved: 'Approved',
+    implemented: 'Implemented', deprecated: 'Deprecated',
+};
+
+// ── Text wrapping ────────────────────────────────────────────────────
+// Usable width inside node: NODE_W - 24px padding = 216px.
+// At 12px bold font, avg char ~7.2px → ~30 chars per line.
+const MAX_CHARS = 30;
+
+function wrapText(str: string): string[] {
+    if (str.length <= MAX_CHARS) return [str];
+    const words  = str.split(' ');
+    const lines: string[] = [];
+    let   current = '';
+    for (const word of words) {
+        const candidate = current ? `${current} ${word}` : word;
+        if (candidate.length <= MAX_CHARS) {
+            current = candidate;
+        } else {
+            if (current) lines.push(current);
+            // Long single word: hard-break
+            current = word.length > MAX_CHARS ? word.slice(0, MAX_CHARS - 1) + '…' : word;
+        }
+    }
+    if (current) lines.push(current);
+    return lines.slice(0, 2); // cap at 2 lines; most titles fit
+}
 
 // ── DAG layout ──────────────────────────────────────────────────────
-const { positioned, isolated, svgWidth, svgHeight } = computed(() => {
+const { positioned, isolated, svgWidth, svgHeight, legendY } = computed(() => {
     const nodeMap = new Map(props.nodes.map(n => [n.id, n]));
     const outEdges: Record<number, number[]> = {};
     const inEdges:  Record<number, number[]> = {};
 
-    for (const n of props.nodes) {
-        outEdges[n.id] = [];
-        inEdges[n.id]  = [];
-    }
+    for (const n of props.nodes) { outEdges[n.id] = []; inEdges[n.id] = []; }
     for (const e of props.edges) {
         outEdges[e.from]?.push(e.to);
         inEdges[e.to]?.push(e.from);
     }
 
-    // Nodes with no edges at all — show separately
     const isolatedNodes = props.nodes.filter(
         n => outEdges[n.id].length === 0 && inEdges[n.id].length === 0
     );
@@ -91,28 +117,23 @@ const { positioned, isolated, svgWidth, svgHeight } = computed(() => {
         props.nodes.filter(n => outEdges[n.id].length > 0 || inEdges[n.id].length > 0).map(n => n.id)
     );
 
-    // Assign layers via longest-path from sources
+    // Longest-path layer assignment
     const layer: Record<number, number> = {};
     for (const n of props.nodes) layer[n.id] = 0;
-
-    // BFS in topological order
     const tempIn: Record<number, number> = {};
     for (const n of props.nodes) tempIn[n.id] = inEdges[n.id].length;
-    const queue = props.nodes.filter(n => tempIn[n.id] === 0).map(n => n.id);
+    const queue   = props.nodes.filter(n => tempIn[n.id] === 0).map(n => n.id);
     const visited = new Set<number>();
-
     while (queue.length > 0) {
         const curr = queue.shift()!;
         if (visited.has(curr)) continue;
         visited.add(curr);
         for (const next of outEdges[curr]) {
             layer[next] = Math.max(layer[next], layer[curr] + 1);
-            tempIn[next]--;
-            if (tempIn[next] === 0) queue.push(next);
+            if (--tempIn[next] === 0) queue.push(next);
         }
     }
 
-    // Group connected nodes by layer
     const layerGroups: Record<number, number[]> = {};
     for (const id of connectedIds) {
         const l = layer[id];
@@ -120,18 +141,13 @@ const { positioned, isolated, svgWidth, svgHeight } = computed(() => {
         layerGroups[l].push(id);
     }
 
-    // Compute positions
     const positions: Record<number, { x: number; y: number }> = {};
     for (const [l, ids] of Object.entries(layerGroups)) {
         ids.forEach((id, i) => {
-            positions[id] = {
-                x: Number(l) * LAYER_GAP + PAD,
-                y: i * NODE_GAP + PAD,
-            };
+            positions[id] = { x: Number(l) * LAYER_GAP + PAD, y: i * NODE_GAP + PAD };
         });
     }
 
-    // is_blocked / is_ready per node
     const isBlocked = (id: number) =>
         inEdges[id].some(bid => nodeMap.get(bid)?.status !== 'implemented');
     const isReady = (id: number) =>
@@ -145,61 +161,95 @@ const { positioned, isolated, svgWidth, svgHeight } = computed(() => {
             y: positions[n.id]?.y ?? PAD,
             layer: layer[n.id],
             is_blocked: isBlocked(n.id),
-            is_ready: isReady(n.id),
+            is_ready:   isReady(n.id),
+            titleLines: wrapText(n.title),
         }));
 
     const isolated: PositionedNode[] = isolatedNodes.map((n, i) => ({
         ...n,
-        x: PAD,
-        y: i * NODE_GAP + PAD,
-        layer: 0,
-        is_blocked: false,
-        is_ready: false,
+        x: PAD, y: i * NODE_GAP + PAD, layer: 0,
+        is_blocked: false, is_ready: false,
+        titleLines: wrapText(n.title),
     }));
 
-    const maxLayer  = positioned.length > 0 ? Math.max(...positioned.map(n => n.layer)) : 0;
+    const maxLayer    = positioned.length > 0 ? Math.max(...positioned.map(n => n.layer)) : 0;
     const maxPerLayer = Object.values(layerGroups).reduce((m, ids) => Math.max(m, ids.length), 0);
-    const svgWidth  = (maxLayer + 1) * LAYER_GAP + PAD * 2;
-    const svgHeight = Math.max(maxPerLayer * NODE_GAP + PAD * 2, NODE_H + PAD * 2);
 
-    return { positioned, isolated, svgWidth, svgHeight };
+    const contentWidth  = (maxLayer + 1) * LAYER_GAP + PAD * 2;
+    const contentHeight = Math.max(maxPerLayer * NODE_GAP + PAD * 2, NODE_H + PAD * 2);
+
+    // SVG must be wide enough for the legend (5 status items + edge/node labels)
+    const svgWidth  = Math.max(contentWidth, 620);
+    const legendY   = contentHeight + 8;
+    const svgHeight = legendY + LEGEND_H;
+
+    return { positioned, isolated, svgWidth, svgHeight, legendY };
 }).value;
 
-// ── Edge path helper ────────────────────────────────────────────────
+// ── Edge helpers ─────────────────────────────────────────────────────
 function edgePath(e: GraphEdge, posMap: Map<number, PositionedNode>): string {
     const src = posMap.get(e.from);
     const tgt = posMap.get(e.to);
     if (!src || !tgt) return '';
-
-    const x1 = src.x + NODE_W;
-    const y1 = src.y + NODE_H / 2;
-    const x2 = tgt.x;
-    const y2 = tgt.y + NODE_H / 2;
+    const x1 = src.x + NODE_W, y1 = src.y + NODE_H / 2;
+    const x2 = tgt.x,          y2 = tgt.y + NODE_H / 2;
     const cx = (x1 + x2) / 2;
-
     return `M ${x1} ${y1} C ${cx} ${y1}, ${cx} ${y2}, ${x2} ${y2}`;
 }
 
 function edgeColor(e: GraphEdge, posMap: Map<number, PositionedNode>): string {
-    const src = posMap.get(e.from);
-    return src?.status === 'implemented' ? '#10b981' : '#f59e0b';
+    return posMap.get(e.from)?.status === 'implemented' ? '#10b981' : '#f59e0b';
 }
 
 const posMap = computed(() => new Map(positioned.map(n => [n.id, n])));
 
-// ── Tooltip ─────────────────────────────────────────────────────────
+// ── Tooltip ──────────────────────────────────────────────────────────
 const tooltip = ref<{ node: PositionedNode; x: number; y: number } | null>(null);
-
 function showTooltip(node: PositionedNode, evt: MouseEvent) {
     tooltip.value = { node, x: evt.clientX + 12, y: evt.clientY + 12 };
 }
-function hideTooltip() {
-    tooltip.value = null;
-}
+function hideTooltip() { tooltip.value = null; }
 
-// ── Truncate helper ─────────────────────────────────────────────────
-function truncate(str: string, max = 26): string {
-    return str.length > max ? str.slice(0, max) + '…' : str;
+// ── PNG export ───────────────────────────────────────────────────────
+const svgRef    = ref<SVGSVGElement | null>(null);
+const exporting = ref(false);
+
+async function exportPng() {
+    const svg = svgRef.value;
+    if (!svg) return;
+    exporting.value = true;
+    try {
+        const scale = 2;
+        const svgClone = svg.cloneNode(true) as SVGSVGElement;
+        svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        svgClone.setAttribute('width',  String(svgWidth));
+        svgClone.setAttribute('height', String(svgHeight));
+
+        const svgStr  = new XMLSerializer().serializeToString(svgClone);
+        const svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+        const svgUrl  = URL.createObjectURL(svgBlob);
+
+        const img = new Image();
+        img.src   = svgUrl;
+        await new Promise<void>((resolve, reject) => { img.onload = () => resolve(); img.onerror = reject; });
+
+        const canvas  = document.createElement('canvas');
+        canvas.width  = svgWidth  * scale;
+        canvas.height = svgHeight * scale;
+        const ctx     = canvas.getContext('2d')!;
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.scale(scale, scale);
+        ctx.drawImage(img, 0, 0);
+        URL.revokeObjectURL(svgUrl);
+
+        const link    = document.createElement('a');
+        link.download = `br-dependency-graph-${props.project.name.toLowerCase().replace(/\s+/g, '-')}.png`;
+        link.href     = canvas.toDataURL('image/png');
+        link.click();
+    } finally {
+        exporting.value = false;
+    }
 }
 </script>
 
@@ -214,25 +264,22 @@ function truncate(str: string, max = 26): string {
                     <h1 class="text-xl font-semibold text-slate-900">BR Dependency Graph</h1>
                     <p class="text-sm text-slate-500 mt-0.5">{{ nodes.length }} business requirement{{ nodes.length !== 1 ? 's' : '' }} · {{ edges.length }} link{{ edges.length !== 1 ? 's' : '' }}</p>
                 </div>
-                <Link :href="route('projects.requirements.business.index', project.id)"
-                    class="text-sm text-slate-500 hover:text-slate-700">
-                    ← Back to list
-                </Link>
-            </div>
-
-            <!-- Legend -->
-            <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-500 bg-white border border-slate-200 rounded-xl px-4 py-3">
-                <span class="font-medium text-slate-600">Status:</span>
-                <span v-for="(fill, key) in statusFill" :key="key" class="flex items-center gap-1.5">
-                    <span class="w-3 h-3 rounded-sm border" :style="`background:${fill};border-color:${statusStroke[key]}`" />
-                    {{ key.charAt(0).toUpperCase() + key.slice(1) }}
-                </span>
-                <span class="ml-4 font-medium text-slate-600">Edge:</span>
-                <span class="flex items-center gap-1.5"><span class="w-4 h-0.5 rounded bg-emerald-500 inline-block"/> Resolved</span>
-                <span class="flex items-center gap-1.5"><span class="w-4 h-0.5 rounded bg-amber-400 inline-block"/> Pending</span>
-                <span class="ml-4 font-medium text-slate-600">Node:</span>
-                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm border-2 border-amber-400 inline-block"/> Blocked</span>
-                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm border-2 border-emerald-500 inline-block"/> Ready</span>
+                <div class="flex items-center gap-3">
+                    <button
+                        v-if="positioned.length > 0"
+                        @click="exportPng"
+                        :disabled="exporting"
+                        class="inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition disabled:opacity-50">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        {{ exporting ? 'Exporting…' : 'Export PNG' }}
+                    </button>
+                    <Link :href="route('projects.requirements.business.index', { project: project.id })"
+                        class="text-sm text-slate-500 hover:text-slate-700">
+                        ← Back to list
+                    </Link>
+                </div>
             </div>
 
             <!-- Empty state -->
@@ -244,18 +291,22 @@ function truncate(str: string, max = 26): string {
                 <!-- Connected graph -->
                 <div v-if="positioned.length > 0" class="bg-white rounded-xl border border-slate-200 overflow-auto">
                     <svg
+                        ref="svgRef"
                         :width="svgWidth"
                         :height="svgHeight"
                         class="block"
                     >
                         <defs>
-                            <marker id="arrow-pending" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+                            <marker id="arrow-pending"  markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
                                 <path d="M0,0 L0,6 L8,3 z" fill="#f59e0b" />
                             </marker>
                             <marker id="arrow-resolved" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
                                 <path d="M0,0 L0,6 L8,3 z" fill="#10b981" />
                             </marker>
                         </defs>
+
+                        <!-- Background -->
+                        <rect width="100%" height="100%" fill="#f8fafc" />
 
                         <!-- Edges -->
                         <g v-for="edge in edges" :key="`${edge.from}-${edge.to}`">
@@ -277,44 +328,73 @@ function truncate(str: string, max = 26): string {
                             @mouseenter="showTooltip(node, $event)"
                             @mousemove="showTooltip(node, $event)"
                             @mouseleave="hideTooltip"
-                            @click="$inertia.visit(route('projects.requirements.business.show', [project.id, node.id]))"
+                            @click="router.visit(route('projects.requirements.business.show', [project.id, node.id]))"
                         >
-                            <!-- Node background -->
                             <rect
-                                :width="NODE_W"
-                                :height="NODE_H"
-                                rx="8"
+                                :width="NODE_W" :height="NODE_H" rx="8"
                                 :fill="statusFill[node.status] ?? '#f1f5f9'"
                                 :stroke="node.is_blocked ? '#f59e0b' : node.is_ready ? '#10b981' : (statusStroke[node.status] ?? '#94a3b8')"
                                 :stroke-width="node.is_blocked || node.is_ready ? 2.5 : 1.5"
                             />
                             <!-- Ref -->
-                            <text
-                                x="12" y="20"
-                                font-size="10"
-                                font-family="monospace"
-                                :fill="statusText[node.status] ?? '#64748b'"
-                                opacity="0.8"
-                            >{{ node.ref }}</text>
-                            <!-- Title -->
-                            <text
-                                x="12" y="38"
-                                font-size="12"
-                                font-weight="600"
-                                :fill="statusText[node.status] ?? '#1e293b'"
-                            >{{ truncate(node.title) }}</text>
-                            <!-- Status label -->
-                            <text
-                                x="12" y="56"
-                                font-size="10"
-                                :fill="statusText[node.status] ?? '#64748b'"
-                                opacity="0.7"
-                            >{{ node.status.charAt(0).toUpperCase() + node.status.slice(1) }}{{ node.is_blocked ? ' · ⚠ Blocked' : node.is_ready ? ' · ✓ Ready' : '' }}</text>
+                            <text x="12" y="18" font-size="10" font-family="monospace"
+                                :fill="statusText[node.status] ?? '#64748b'" opacity="0.8">
+                                {{ node.ref }}
+                            </text>
+                            <!-- Title — wrapped, no truncation -->
+                            <text font-size="12" font-weight="600" :fill="statusText[node.status] ?? '#1e293b'">
+                                <tspan
+                                    v-for="(line, i) in node.titleLines"
+                                    :key="i"
+                                    x="12"
+                                    :y="36 + i * 16"
+                                >{{ line }}</tspan>
+                            </text>
+                            <!-- Status / state label -->
+                            <text x="12" :y="NODE_H - 12" font-size="10"
+                                :fill="statusText[node.status] ?? '#64748b'" opacity="0.7">
+                                {{ statusLabel[node.status] ?? node.status }}{{ node.is_blocked ? ' · ⚠ Blocked' : node.is_ready ? ' · ✓ Ready' : '' }}
+                            </text>
+                        </g>
+
+                        <!-- ── Embedded legend ── -->
+                        <g :transform="`translate(0, ${legendY})`">
+                            <!-- Separator -->
+                            <line :x1="PAD" y1="0" :x2="svgWidth - PAD" y2="0" stroke="#e2e8f0" stroke-width="1" />
+
+                            <!-- Row 1: Status colours -->
+                            <text :x="PAD" y="22" font-size="11" font-weight="600" fill="#475569">Status:</text>
+                            <g v-for="(key, i) in Object.keys(statusFill)" :key="key"
+                                :transform="`translate(${PAD + 68 + i * 96}, 10)`">
+                                <rect width="13" height="13" rx="3"
+                                    :fill="statusFill[key]"
+                                    :stroke="statusStroke[key]" stroke-width="1.5" />
+                                <text x="18" y="11" font-size="11" fill="#475569">{{ statusLabel[key] }}</text>
+                            </g>
+
+                            <!-- Row 2: Edge + node border states -->
+                            <text :x="PAD" y="50" font-size="11" font-weight="600" fill="#475569">Edge:</text>
+                            <!-- Resolved -->
+                            <line :x1="PAD + 48" y1="45" :x2="PAD + 68" y2="45" stroke="#10b981" stroke-width="2" />
+                            <text :x="PAD + 72" y="50" font-size="11" fill="#475569">Resolved</text>
+                            <!-- Pending -->
+                            <line :x1="PAD + 140" y1="45" :x2="PAD + 160" y2="45" stroke="#f59e0b" stroke-width="2" />
+                            <text :x="PAD + 164" y="50" font-size="11" fill="#475569">Pending</text>
+
+                            <text :x="PAD + 230" y="50" font-size="11" font-weight="600" fill="#475569">Node:</text>
+                            <!-- Blocked -->
+                            <rect :x="PAD + 275" y="38" width="13" height="13" rx="3"
+                                fill="#fffbeb" stroke="#f59e0b" stroke-width="2" />
+                            <text :x="PAD + 292" y="50" font-size="11" fill="#475569">Blocked</text>
+                            <!-- Ready -->
+                            <rect :x="PAD + 348" y="38" width="13" height="13" rx="3"
+                                fill="#f0fdf4" stroke="#10b981" stroke-width="2" />
+                            <text :x="PAD + 365" y="50" font-size="11" fill="#475569">Ready</text>
                         </g>
                     </svg>
                 </div>
 
-                <!-- Isolated BRs (no links) -->
+                <!-- Isolated BRs -->
                 <div v-if="isolated.length > 0" class="bg-white rounded-xl border border-slate-200 overflow-hidden">
                     <div class="px-5 py-3 border-b border-slate-100">
                         <h2 class="text-sm font-semibold text-slate-600">Unlinked BRs
@@ -325,13 +405,13 @@ function truncate(str: string, max = 26): string {
                         <tbody class="divide-y divide-slate-100">
                             <tr v-for="node in isolated" :key="node.id"
                                 class="hover:bg-slate-50 cursor-pointer transition"
-                                @click="$inertia.visit(route('projects.requirements.business.show', [project.id, node.id]))">
+                                @click="router.visit(route('projects.requirements.business.show', [project.id, node.id]))">
                                 <td class="px-5 py-2.5 font-mono text-xs text-slate-400 w-20">{{ node.ref }}</td>
                                 <td class="px-5 py-2.5 text-slate-800">{{ node.title }}</td>
                                 <td class="px-5 py-2.5">
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                                         :style="`background:${statusFill[node.status]};color:${statusText[node.status]}`">
-                                        {{ node.status.charAt(0).toUpperCase() + node.status.slice(1) }}
+                                        {{ statusLabel[node.status] ?? node.status }}
                                     </span>
                                 </td>
                             </tr>
