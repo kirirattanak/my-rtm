@@ -17,10 +17,31 @@ export interface NavItem {
     isActive?: boolean;
 }
 
+export type SubscriptionTier = 'basic' | 'starter' | 'standard' | 'pro';
+
+export interface TierInfo {
+    name: SubscriptionTier | null;
+    label: string | null;
+    seats: number | null;
+    seats_used: number;
+    features: {
+        br: boolean;
+        tr: boolean;
+        tc: boolean;
+        test_runs: boolean;
+        test_suites: boolean;
+        sprints: boolean;
+        rtm: boolean;
+        reports: boolean;
+        imports_exports: boolean;
+    };
+}
+
 export interface SharedData {
     name: string;
     quote: { message: string; author: string };
     auth: Auth;
+    tier: TierInfo | null;
     currentProject: { id: number; name: string } | null;
     flash: { success: string | null; error: string | null };
     unreadNotificationsCount: number;

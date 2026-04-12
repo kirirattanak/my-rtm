@@ -3,9 +3,9 @@
 namespace App\Http\Middleware;
 
 use App\Models\Project;
+use App\Services\TierGate;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -36,6 +36,39 @@ class HandleInertiaRequests extends Middleware
      *
      * @return array<string, mixed>
      */
+    private function shareTier(Request $request): ?array
+    {
+        $user = $request->user();
+        if (!$user) {
+            return null;
+        }
+
+        $org = $user->organization()->with('activeSubscription.tierOption')->first();
+        if (!$org) {
+            return null;
+        }
+
+        $gate = TierGate::for($org);
+
+        return [
+            'name'  => $org->activeSubscription?->tierOption?->tier,
+            'label' => $org->activeSubscription?->tierOption?->tierLabel(),
+            'seats' => $org->activeSubscription?->tierOption?->seats,
+            'seats_used' => $org->activeSeatCount(),
+            'features' => [
+                'br'             => $user->isAdmin() || $gate->can('br'),
+                'tr'             => $user->isAdmin() || $gate->can('tr'),
+                'tc'             => $user->isAdmin() || $gate->can('tc'),
+                'test_runs'      => $user->isAdmin() || $gate->can('test_runs'),
+                'test_suites'    => $user->isAdmin() || $gate->can('test_suites'),
+                'sprints'        => $user->isAdmin() || $gate->can('sprints'),
+                'rtm'            => $user->isAdmin() || $gate->can('rtm'),
+                'reports'        => $user->isAdmin() || $gate->can('reports'),
+                'imports_exports' => $user->isAdmin() || $gate->can('imports_exports'),
+            ],
+        ];
+    }
+
     public function share(Request $request): array
     {
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
@@ -60,6 +93,7 @@ class HandleInertiaRequests extends Middleware
                 'user'     => $request->user(),
                 'is_admin' => $request->user()?->isAdmin() ?? false,
             ],
+            'tier' => fn () => $this->shareTier($request),
             'currentProject' => $currentProject,
             'flash' => [
                 'success' => $request->session()->get('success'),

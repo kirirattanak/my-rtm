@@ -431,13 +431,13 @@ This produces a diamond shape in the graph with BR-003 in a "Blocked" state, and
 
 ---
 
-## Milestone 12 — Organisation Membership & Subscription Tiers
+## Milestone 12 — Organisation Membership & Subscription Tiers ✅
 
 **Goal:** Introduce a multi-tenant organisation layer. Each company or organisation owns its projects and users. Organisations subscribe to one of four functional tiers (Basic → Starter → Standard → Pro), and within each tier they choose a seat plan that caps the number of active users. Feature access is enforced across the entire application based on the active subscription.
 
 ---
 
-### 12.1 — Data Model
+### 12.1 — Data Model ✅
 
 #### New table: `organizations`
 
@@ -493,7 +493,7 @@ One active row per organisation at any time.
 
 ---
 
-### 12.2 — Tier Feature Matrix
+### 12.2 — Tier Feature Matrix ✅
 
 Each tier unlocks a cumulative set of application features. Enforcement is handled by a `TierGate` service, not by modifying the existing RBAC permission table.
 
@@ -514,7 +514,7 @@ Each tier unlocks a cumulative set of application features. Enforcement is handl
 
 ---
 
-### 12.3 — TierGate Service
+### 12.3 — TierGate Service ✅
 
 `App\Services\TierGate` — the single source of truth for tier enforcement.
 
@@ -532,7 +532,7 @@ A `CheckTierAccess` middleware wraps controller groups, injecting the resolved o
 
 ---
 
-### 12.4 — Seat Limit Enforcement
+### 12.4 — Seat Limit Enforcement ✅
 
 When inviting a new user (or reactivating an existing one), the system checks:
 
@@ -546,7 +546,7 @@ Active user count = users in the org where `is_active = true`.
 
 ---
 
-### 12.5 — Organisation Management (Admin)
+### 12.5 — Organisation Management (Admin) ✅
 
 System admins can manage all organisations from `/admin/organizations`:
 
@@ -559,7 +559,7 @@ Org owners (non-admin) cannot access the admin org panel. They access their own 
 
 ---
 
-### 12.6 — Subscription Settings (Org Owner)
+### 12.6 — Subscription Settings (Org Owner) ✅
 
 Route: `/settings/subscription` — visible to the org owner only.
 
@@ -570,7 +570,7 @@ Route: `/settings/subscription` — visible to the org owner only.
 
 ---
 
-### 12.7 — UI Enforcement (Feature Lock)
+### 12.7 — UI Enforcement (Feature Lock) ✅
 
 Locked navigation items and action buttons show a padlock icon and are disabled (not hidden), with a tooltip explaining which tier unlocks the feature. This gives lower-tier users visibility into what's available at higher tiers.
 
@@ -578,17 +578,18 @@ Controllers guard at the action level using `TierGate::assertCan()`, returning H
 
 ---
 
-### 12.8 — Migration Strategy
+### 12.8 — Migration Strategy ✅
 
-1. Create `organizations` table and seed one default organisation ("Default Organisation").
-2. Add `organization_id` (nullable) to `users` and `projects`; backfill all existing rows to the default org.
-3. Add NOT NULL constraint in a follow-up migration after backfill.
-4. Seed `subscription_tier_options` with all plan rows.
-5. Seed the default org with a Pro subscription (so no existing dev/test workflow is broken).
+1. Create `organizations` table (`owner_id` nullable to avoid chicken-and-egg on fresh installs).
+2. Create `subscription_tier_options` table and seed all plan rows inline in the migration.
+3. Create `organization_subscriptions` table.
+4. Add `organization_id` (nullable FK) to `users` and `projects` — no backfill in the migration.
+5. `OrganizationSeeder` handles all org creation and backfill after users are seeded, so fresh installs (`migrate:fresh --seed`) and existing databases both work correctly.
+6. Acme Corp is seeded with a Pro · 100-seat active subscription so no existing dev workflow breaks.
 
 ---
 
-### 12.9 — Seeder
+### 12.9 — Seeder ✅
 
 `OrganizationSeeder`:
 - Creates two orgs: "Acme Corp" (Pro · 100 seats) and "Beta Inc" (Starter · 50 seats)

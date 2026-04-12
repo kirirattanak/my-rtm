@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\InvitationController;
+use App\Http\Controllers\Admin\OrganizationController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\RolePermissionController;
 use App\Http\Controllers\Admin\UserController;
@@ -22,4 +23,11 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 
     Route::get('roles/{role}/permissions', [RolePermissionController::class, 'edit'])->name('roles.permissions.edit');
     Route::put('roles/{role}/permissions', [RolePermissionController::class, 'update'])->name('roles.permissions.update');
+
+    Route::get('organizations', [OrganizationController::class, 'index'])->name('organizations.index');
+    Route::get('organizations/create', [OrganizationController::class, 'create'])->name('organizations.create');
+    Route::post('organizations', [OrganizationController::class, 'store'])->name('organizations.store');
+    Route::get('organizations/{organization}', [OrganizationController::class, 'show'])->name('organizations.show');
+    Route::patch('organizations/{organization}', [OrganizationController::class, 'update'])->name('organizations.update');
+    Route::patch('organizations/{organization}/subscription', [OrganizationController::class, 'updateSubscription'])->name('organizations.subscription.update');
 });
