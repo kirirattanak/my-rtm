@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Projects;
 
+use App\Models\Organization;
 use App\Models\Role;
 use App\Models\Project;
 use App\Models\User;
@@ -126,12 +127,29 @@ class ProjectTest extends TestCase
 
     // ── Destroy ───────────────────────────────────────────────────────────────
 
-    public function test_admin_can_delete_project(): void
+    public function test_admin_cannot_delete_project(): void
     {
         $admin   = User::factory()->admin()->create();
         $project = Project::factory()->create();
 
         $this->actingAs($admin)
+            ->delete(route('projects.destroy', $project))
+            ->assertForbidden();
+    }
+
+    public function test_org_owner_can_delete_project(): void
+    {
+        $owner = User::factory()->projectManager()->create();
+        $org   = Organization::create([
+            'name'      => 'Test Org',
+            'slug'      => 'test-org',
+            'owner_id'  => $owner->id,
+            'is_active' => true,
+        ]);
+        $owner->update(['organization_id' => $org->id]);
+        $project = Project::factory()->create(['organization_id' => $org->id]);
+
+        $this->actingAs($owner)
             ->delete(route('projects.destroy', $project))
             ->assertRedirect();
 

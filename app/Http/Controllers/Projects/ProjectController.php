@@ -21,7 +21,7 @@ class ProjectController extends Controller
         $user = $request->user();
 
         $projects = Project::with('owner')
-            ->when(! $user->isAdmin(), fn ($q) => $q->whereHas('projectMembers', fn ($q) => $q->where('user_id', $user->id)))
+            ->whereHas('projectMembers', fn ($q) => $q->where('user_id', $user->id))
             ->withCount('projectMembers')
             ->orderBy('name')
             ->paginate(20)
@@ -53,7 +53,8 @@ class ProjectController extends Controller
 
         $project = Project::create([
             ...$data,
-            'owner_id' => $request->user()->id,
+            'owner_id'        => $request->user()->id,
+            'organization_id' => $request->user()->organization_id,
         ]);
 
         // Owner is automatically added as a Project Manager member
