@@ -772,6 +772,6 @@ The `TaskResource` already includes all fields the card needs (title, status, pr
 - v0.1 ships Milestones 1–8 as a fully functional RTM application
 - v0.2 ships Milestones 9–10: configurable permissions and remaining reporting features
 - Milestone 11 extends v0.2 with BR dependency tracking and graph visualisation
-- Milestone 12 extends v0.2 with multi-tenant organisation membership and subscription-based feature gating
-- Milestone 13 extends v0.2 with a Kanban board view for tasks and sprints
+- Milestone 12 in v0.3 with multi-tenant organisation membership and subscription-based feature gating
+- Milestone 13 extends v0.3 with a Kanban board view for tasks and sprints
 - Auth and roles (Milestone 1) underpin all access rules throughout the application
