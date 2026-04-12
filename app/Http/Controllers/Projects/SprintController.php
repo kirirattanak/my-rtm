@@ -10,6 +10,7 @@ use App\Http\Resources\SprintResource;
 use App\Http\Resources\TaskResource;
 use App\Models\Project;
 use App\Models\Sprint;
+use App\Models\Task;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -92,6 +93,11 @@ class SprintController extends Controller
         // Burndown data (hours-unit tasks only)
         $burndown = $this->buildBurndown($sprint);
 
+        $members = $project->projectMembers()
+            ->with('user:id,name')
+            ->get()
+            ->map(fn ($m) => ['value' => $m->user_id, 'label' => $m->user->name]);
+
         return Inertia::render('projects/sprints/Show', [
             'project'  => $project->only('id', 'name'),
             'sprint'   => [
@@ -103,11 +109,14 @@ class SprintController extends Controller
                 'is_active'  => $sprint->isActive(),
                 'tasks'      => $sprint->tasks->map(fn ($t) => TaskResource::sprintItem($t)),
             ],
+            'members'    => $members,
             'workload'   => $workload,
             'burndown'   => $burndown,
             'can'        => [
-                'edit'   => $request->user()->can('update', $sprint),
-                'delete' => $request->user()->can('delete', $sprint),
+                'edit'          => $request->user()->can('update', $sprint),
+                'delete'        => $request->user()->can('delete', $sprint),
+                'create_task'   => $request->user()->can('create', [Task::class, $project]),
+                'change_status' => $request->user()->hasPermission('tasks.change_status', $project),
             ],
         ]);
     }

@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import TaskStatusSelect from '@/components/TaskStatusSelect.vue';
+import TaskKanbanBoard from '@/components/TaskKanbanBoard.vue';
+import TaskFilters from '@/components/TaskFilters.vue';
 import { type BreadcrumbItem, type BurndownData, type Sprint, type TaskListItem, type WorkloadEntry } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
+import { useLocalStorage } from '@vueuse/core';
+import { computed, ref } from 'vue';
 import { Line } from 'vue-chartjs';
 import {
     Chart as ChartJS,
@@ -18,12 +22,15 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
+type MemberOption = { value: number; label: string };
+
 const props = defineProps<{
     project: { id: number; name: string };
     sprint: Sprint & { is_active: boolean; tasks: TaskListItem[] };
+    members: MemberOption[];
     workload: WorkloadEntry[];
     burndown: BurndownData;
-    can: { edit: boolean; delete: boolean };
+    can: { edit: boolean; delete: boolean; create_task: boolean; change_status: boolean };
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -34,6 +41,24 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 
+// ── Task view toggle ──────────────────────────────────────────────────────────
+const tasksViewKey = computed(() => `sprint-tasks-view-${props.sprint.id}`);
+const tasksView = useLocalStorage<'list' | 'board'>(tasksViewKey.value, 'list');
+
+const filterPriorities = ref<string[]>([]);
+const filterCategory   = ref('');
+
+const availableCategories = computed(() => {
+    const seen = new Map<string, string>();
+    for (const t of props.sprint.tasks) {
+        if (t.category && t.category_label && !seen.has(t.category)) {
+            seen.set(t.category, t.category_label);
+        }
+    }
+    return [...seen.entries()].map(([value, label]) => ({ value, label }));
+});
+
+// ── Progress stats ────────────────────────────────────────────────────────────
 const tasksByStatus = (status: string) => props.sprint.tasks.filter(t => t.status === status);
 const doneTasks = () => tasksByStatus('done').length;
 const totalTasks = () => props.sprint.tasks.length;
@@ -164,48 +189,89 @@ function confirmDelete() {
                 </div>
             </div>
 
-            <!-- Tasks table -->
-            <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
-                <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+            <!-- Tasks section -->
+            <div class="space-y-4">
+                <!-- Section header -->
+                <div class="flex items-center justify-between">
                     <h2 class="text-sm font-semibold text-slate-700">Tasks</h2>
-                    <Link :href="route('projects.tasks.create', project.id)"
-                        class="text-xs text-primary font-medium hover:underline">
-                        + Add Task
-                    </Link>
+                    <div class="flex items-center gap-3">
+                        <!-- List / Board toggle -->
+                        <div class="flex items-center bg-slate-100 rounded-lg p-0.5 text-xs font-medium">
+                            <button @click="tasksView = 'list'"
+                                class="px-3 py-1.5 rounded-md transition-colors"
+                                :class="tasksView === 'list' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'">
+                                List
+                            </button>
+                            <button @click="tasksView = 'board'"
+                                class="px-3 py-1.5 rounded-md transition-colors"
+                                :class="tasksView === 'board' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'">
+                                Board
+                            </button>
+                        </div>
+                        <Link v-if="can.create_task" :href="route('projects.tasks.create', { project: project.id })"
+                            class="text-xs text-primary font-medium hover:underline">
+                            + Add Task
+                        </Link>
+                    </div>
                 </div>
-                <div v-if="sprint.tasks.length === 0" class="px-5 py-8 text-center text-sm text-slate-400">
-                    No tasks in this sprint. Assign tasks from the Tasks page.
+
+                <!-- Board view -->
+                <template v-if="tasksView === 'board'">
+                    <TaskFilters
+                        :priorities="filterPriorities"
+                        :category="filterCategory"
+                        :available-categories="availableCategories"
+                        @update:priorities="filterPriorities = $event"
+                        @update:category="filterCategory = $event"
+                    />
+                    <TaskKanbanBoard
+                        :tasks="sprint.tasks"
+                        :project-id="project.id"
+                        :sprint-id="sprint.id"
+                        :members="members"
+                        :can-create="can.create_task"
+                        :can-change-status="can.change_status"
+                        :filter-priorities="filterPriorities"
+                        :filter-category="filterCategory"
+                    />
+                </template>
+
+                <!-- List view -->
+                <div v-else class="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                    <div v-if="sprint.tasks.length === 0" class="px-5 py-8 text-center text-sm text-slate-400">
+                        No tasks in this sprint. Assign tasks from the Tasks page.
+                    </div>
+                    <table v-else class="w-full text-sm">
+                        <thead class="bg-slate-50 border-b border-slate-100">
+                            <tr>
+                                <th class="px-5 py-2 text-left text-xs font-medium text-slate-500">Task</th>
+                                <th class="px-5 py-2 text-left text-xs font-medium text-slate-500 w-28">Status</th>
+                                <th class="px-5 py-2 text-left text-xs font-medium text-slate-500 w-28">Effort</th>
+                                <th class="px-5 py-2 text-left text-xs font-medium text-slate-500 w-32">Assignee</th>
+                                <th class="px-5 py-2 text-left text-xs font-medium text-slate-500 w-24">Due</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr v-for="task in sprint.tasks" :key="task.id" class="hover:bg-slate-50">
+                                <td class="px-5 py-3">
+                                    <Link :href="route('projects.tasks.show', { project: project.id, task: task.id })"
+                                        class="text-slate-800 hover:text-primary font-medium">
+                                        {{ task.title }}
+                                    </Link>
+                                </td>
+                                <td class="px-5 py-3">
+                                    <TaskStatusSelect :task="task" :project-id="project.id" />
+                                </td>
+                                <td class="px-5 py-3 text-xs text-slate-500">
+                                    <span v-if="task.effort_estimate">{{ task.effort_estimate }} {{ task.effort_unit_short }}</span>
+                                    <span v-else class="text-slate-300">—</span>
+                                </td>
+                                <td class="px-5 py-3 text-xs text-slate-500">{{ task.assignee?.name ?? '—' }}</td>
+                                <td class="px-5 py-3 text-xs text-slate-400">{{ task.due_date ?? '—' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-                <table v-else class="w-full text-sm">
-                    <thead class="bg-slate-50 border-b border-slate-100">
-                        <tr>
-                            <th class="px-5 py-2 text-left text-xs font-medium text-slate-500">Task</th>
-                            <th class="px-5 py-2 text-left text-xs font-medium text-slate-500 w-28">Status</th>
-                            <th class="px-5 py-2 text-left text-xs font-medium text-slate-500 w-28">Effort</th>
-                            <th class="px-5 py-2 text-left text-xs font-medium text-slate-500 w-32">Assignee</th>
-                            <th class="px-5 py-2 text-left text-xs font-medium text-slate-500 w-24">Due</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        <tr v-for="task in sprint.tasks" :key="task.id" class="hover:bg-slate-50">
-                            <td class="px-5 py-3">
-                                <Link :href="route('projects.tasks.show', [project.id, task.id])"
-                                    class="text-slate-800 hover:text-primary font-medium">
-                                    {{ task.title }}
-                                </Link>
-                            </td>
-                            <td class="px-5 py-3">
-                                <TaskStatusSelect :task="task" :project-id="project.id" />
-                            </td>
-                            <td class="px-5 py-3 text-xs text-slate-500">
-                                <span v-if="task.effort_estimate">{{ task.effort_estimate }} {{ task.effort_unit_short }}</span>
-                                <span v-else class="text-slate-300">—</span>
-                            </td>
-                            <td class="px-5 py-3 text-xs text-slate-500">{{ task.assignee?.name ?? '—' }}</td>
-                            <td class="px-5 py-3 text-xs text-slate-400">{{ task.due_date ?? '—' }}</td>
-                        </tr>
-                    </tbody>
-                </table>
             </div>
         </div>
     </AppLayout>
