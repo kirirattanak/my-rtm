@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
+use App\Models\Role;
 use App\Models\SubscriptionTierOption;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -50,17 +53,21 @@ class OrganizationController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'name'           => 'required|string|max:255',
-            'slug'           => 'required|string|max:255|unique:organizations,slug|regex:/^[a-z0-9\-]+$/',
-            'owner_id'       => 'nullable|exists:users,id',
-            'tier_option_id' => 'required|exists:subscription_tier_options,id',
-            'is_active'      => 'boolean',
+            'name'              => 'required|string|max:255',
+            'slug'              => 'required|string|max:255|unique:organizations,slug|regex:/^[a-z0-9\-]+$/',
+            'tier_option_id'    => 'required|exists:subscription_tier_options,id',
+            'is_active'         => 'boolean',
+            // Owner: provide either an existing user id OR name+email for a new account
+            'owner_id'          => 'nullable|exists:users,id',
+            'owner_name'        => 'required_without:owner_id|string|max:255',
+            'owner_email'       => 'required_without:owner_id|email|unique:users,email',
         ]);
 
+        // Create the org first (owner set after so the user can reference org_id)
         $org = Organization::create([
             'name'      => $data['name'],
             'slug'      => $data['slug'],
-            'owner_id'  => $data['owner_id'] ?? null,
+            'owner_id'  => null,
             'is_active' => $data['is_active'] ?? true,
         ]);
 
@@ -70,8 +77,29 @@ class OrganizationController extends Controller
             'starts_at'      => now(),
         ]);
 
-        return redirect()->route('admin.organizations.index')
-            ->with('success', "Organisation \"{$org->name}\" created.");
+        if (!empty($data['owner_id'])) {
+            // Assign existing user as owner
+            $ownerId = $data['owner_id'];
+            User::where('id', $ownerId)->update(['organization_id' => $org->id]);
+        } else {
+            // Create a new owner account
+            $pmRole = Role::where('slug', 'project_manager')->first();
+            $owner  = User::create([
+                'name'              => $data['owner_name'],
+                'email'             => $data['owner_email'],
+                'password'          => Hash::make(Str::random(16)),
+                'role_id'           => $pmRole?->id,
+                'organization_id'   => $org->id,
+                'is_active'         => true,
+                'email_verified_at' => now(),
+            ]);
+            $ownerId = $owner->id;
+        }
+
+        $org->update(['owner_id' => $ownerId]);
+
+        return redirect()->route('admin.organizations.show', $org)
+            ->with('success', "Organisation \"{$org->name}\" created. Owner account is ready.");
     }
 
     public function show(Organization $organization): Response

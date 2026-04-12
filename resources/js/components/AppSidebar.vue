@@ -11,6 +11,7 @@ import AppLogo from './AppLogo.vue';
 
 const page = usePage<SharedData>();
 const isAdmin = page.props.auth.is_admin;
+const isOrgOwner = page.props.auth.is_org_owner;
 const currentProject = computed(() => page.props.currentProject);
 
 const mainNavItems: NavItem[] = [
@@ -22,6 +23,11 @@ const adminNavItems: NavItem[] = [
     { title: 'Invitations', href: '/admin/invitations', icon: Mail },
     { title: 'Roles & Permissions', href: '/admin/roles', icon: Shield },
     { title: 'Organisations', href: '/admin/organizations', icon: Building2 },
+];
+
+const orgNavItems: NavItem[] = [
+    { title: 'Users', href: '/org/users', icon: Users },
+    { title: 'Roles & Permissions', href: '/org/roles', icon: Shield },
 ];
 
 const projectNavItems = computed<NavItem[]>(() => {
@@ -100,6 +106,7 @@ const footerNavItems: NavItem[] = [];
                 :items="projectNavItems"
                 :label="currentProject.name"
             />
+            <NavMain v-if="isOrgOwner && !isAdmin" :items="orgNavItems" label="Organisation" />
             <NavMain v-if="isAdmin" :items="adminNavItems" label="Admin" />
         </SidebarContent>
 

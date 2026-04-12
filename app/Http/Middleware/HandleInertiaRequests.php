@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Organization;
 use App\Models\Project;
 use App\Services\TierGate;
 use Illuminate\Foundation\Inspiring;
@@ -43,7 +44,10 @@ class HandleInertiaRequests extends Middleware
             return null;
         }
 
-        $org = $user->organization()->with('activeSubscription.tierOption')->first();
+        /** @var Organization|null $org */
+        $org = Organization::with('activeSubscription.tierOption')
+            ->find($user->organization_id);
+
         if (!$org) {
             return null;
         }
@@ -90,8 +94,9 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
-                'user'     => $request->user(),
-                'is_admin' => $request->user()?->isAdmin() ?? false,
+                'user'          => $request->user(),
+                'is_admin'      => $request->user()?->isAdmin() ?? false,
+                'is_org_owner'  => fn () => $request->user()?->isOrgOwner() ?? false,
             ],
             'tier' => fn () => $this->shareTier($request),
             'currentProject' => $currentProject,

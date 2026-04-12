@@ -599,12 +599,65 @@ Controllers guard at the action level using `TierGate::assertCan()`, returning H
 
 ---
 
+### 12.10 — Org Owner Identity ✅
+
+Each organisation has exactly one owner (`organizations.owner_id`). The owner account is created automatically when an org is seeded or created via the admin panel.
+
+`User::isOrgOwner()` — returns true when `$this->id === $this->organization->owner_id`.
+
+`User::hasPermission()` is extended so that org owners bypass all RBAC checks within their own organisation's projects (equivalent to PM-level access within the org, without needing a project role). System admins continue to bypass all checks globally.
+
+`is_org_owner` is shared via Inertia middleware so the frontend can conditionally render owner-only controls.
+
+---
+
+### 12.11 — Org User Management (Org Owner) ✅
+
+Route group: `/org/users` — accessible to org owners and system admins only.
+
+- **List** (`GET /org/users`): all users in the org with name, email, role, active status, seat count summary.
+- **Invite** (`GET /org/invitations`, `POST /org/invitations`): invite by email, assign a role. Seat limit enforced before sending. Org owners can only invite into their own org.
+- **Update role** (`PATCH /org/users/{user}/role`): assign any system or org-scoped custom role to a user.
+- **Toggle active** (`PATCH /org/users/{user}/toggle-active`): deactivate/reactivate users (seat count decrements on deactivation).
+
+---
+
+### 12.12 — Org-Scoped Role Management (Org Owner) ✅
+
+Add `organization_id` (nullable FK) to the `roles` table. Roles with `organization_id = null` are system-wide (read-only for org owners). Roles with an `organization_id` are custom roles visible and editable only within that org.
+
+Route group: `/org/roles` — accessible to org owners and system admins.
+
+- **List** (`GET /org/roles`): system roles (read-only) + org-scoped custom roles (editable).
+- **Create** (`POST /org/roles`): create a new custom role for the org.
+- **Edit name** (`PATCH /org/roles/{role}`): rename a custom org role.
+- **Delete** (`DELETE /org/roles/{role}`): delete a custom org role (disallowed if users are assigned to it).
+- **Permissions** (`GET /org/roles/{role}/permissions`, `PUT /org/roles/{role}/permissions`): assign permissions to a custom org role.
+
+---
+
+### 12.13 — Default Org Owner Account ✅
+
+When creating a new organisation via the admin panel, the admin chooses one of two modes:
+
+- **Create new account** — enter name + email; the system creates the user with a random temporary password, assigns them Project Manager role, and links them as `organization.owner_id`.
+- **Assign existing user** — pick any existing user from a dropdown; their `organization_id` is updated to the new org.
+
+`OrganizationSeeder` creates a dedicated `owner@beta.example.com` account for Beta Inc. Acme Corp uses the seeded system admin as owner.
+
+Users registering via an org invitation (`/register?invitation=…`) are automatically assigned to the invitation's `organization_id`.
+
+Non-admin users that don't belong to an org (e.g. direct registrations without an invitation) have `organization_id = null` and see no org features until assigned.
+
+---
+
 ### Access Rules
 
-- System admin can create/manage all organisations and override subscriptions
-- Org owner can view and change their own subscription plan
+- System admin can create/manage all organisations, users, roles, and subscriptions globally
+- Org owner bypasses RBAC checks within their org's projects; manages org users, invitations, and org-scoped custom roles
+- Regular users are subject to their assigned role's permissions (project-level override applies)
 - Feature access is org-wide — all users in an org share the same tier gate
-- Seat limit is enforced at invite/reactivation time, not at login
+- Seat limit is enforced at invite/reactivation time, not at login; owner account counts as one seat
 
 ---
 

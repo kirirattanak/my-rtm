@@ -61,10 +61,11 @@ class RegisteredUserController extends Controller
         }
 
         $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'password' => Hash::make($request->password),
-            'role_id'  => $roleId,
+            'name'            => $request->name,
+            'email'           => $request->email,
+            'password'        => Hash::make($request->password),
+            'role_id'         => $roleId,
+            'organization_id' => $invitation?->organization_id,
         ]);
 
         if ($invitation) {

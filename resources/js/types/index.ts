@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-vue-next';
 export interface Auth {
     user: User;
     is_admin: boolean;
+    is_org_owner: boolean;
 }
 
 export interface BreadcrumbItem {

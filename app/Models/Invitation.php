@@ -11,6 +11,7 @@ class Invitation extends Model
         'email',
         'role',
         'token',
+        'organization_id',
         'invited_by',
         'accepted_at',
         'expires_at',
