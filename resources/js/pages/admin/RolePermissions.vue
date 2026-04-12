@@ -2,7 +2,6 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm } from '@inertiajs/vue3';
-import { computed } from 'vue';
 
 type PermissionItem = { id: number; key: string; label: string };
 type PermissionGroup = { group: string; permissions: PermissionItem[] };

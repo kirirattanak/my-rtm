@@ -7,7 +7,7 @@ import { ref } from 'vue';
 type UserRow = { id: number; name: string; email: string; role_id: number | null; role_name: string | null; is_active: boolean; created_at: string };
 type RoleOption = { id: number; name: string; is_system: boolean };
 
-const props = defineProps<{
+defineProps<{
     users: UserRow[];
     roles: RoleOption[];
 }>();

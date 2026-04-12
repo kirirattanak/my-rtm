@@ -4,7 +4,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
-const props = defineProps<{
+defineProps<{
     roles: { id: number; name: string; slug: string; is_system: boolean; user_count: number }[];
 }>();
 

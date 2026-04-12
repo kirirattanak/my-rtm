@@ -178,7 +178,6 @@ const uncoveredTrs = computed<(RtmTr & { br_ref: string; br_title: string })[]>(
     return result;
 });
 
-const uncoveredBrs = computed(() => props.matrix.filter(br => !br.is_covered));
 const brsWithNoTrs = computed(() => props.matrix.filter(br => br.trs.length === 0));
 
 // Summary stats

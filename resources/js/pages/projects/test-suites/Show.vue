@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { type BreadcrumbItem, type TestSuiteDetail, type TestRunStatus } from '@/types';
+import { type BreadcrumbItem, type TestSuiteDetail } from '@/types';
 import { Head, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 

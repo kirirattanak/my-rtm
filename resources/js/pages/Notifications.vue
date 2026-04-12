@@ -4,7 +4,7 @@ import Pagination from '@/components/Pagination.vue';
 import { type AppNotification, type BreadcrumbItem, type Paginator } from '@/types';
 import { Head, router } from '@inertiajs/vue3';
 
-const props = defineProps<{
+defineProps<{
     notifications: Paginator<AppNotification>;
 }>();
 
