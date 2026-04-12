@@ -53,11 +53,11 @@ class RolePermissionController extends Controller
         }
 
         $data = $request->validate([
-            'permission_ids'   => ['present', 'array'],
-            'permission_ids.*' => ['integer', 'exists:permissions,id'],
+            'permissions'   => ['present', 'array'],
+            'permissions.*' => ['integer', 'exists:permissions,id'],
         ]);
 
-        $role->permissions()->sync($data['permission_ids']);
+        $role->permissions()->sync($data['permissions']);
 
         Cache::forget("role.{$role->id}.permissions");
 
