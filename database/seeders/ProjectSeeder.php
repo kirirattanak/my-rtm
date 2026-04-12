@@ -12,7 +12,6 @@ class ProjectSeeder extends Seeder
 {
     public function run(): void
     {
-        $admin = User::where('email', 'admin@rtm.test')->first();
         $pm    = User::where('email', 'pm@rtm.test')->first();
         $ba    = User::where('email', 'ba@rtm.test')->first();
         $dev   = User::where('email', 'dev@rtm.test')->first();
@@ -44,13 +43,13 @@ class ProjectSeeder extends Seeder
             'name'        => 'Mobile Banking App',
             'description' => 'Native mobile application for retail banking customers with account management and transfers.',
             'status'      => ProjectStatus::OnHold,
-            'owner_id'    => $admin->id,
+            'owner_id'    => $pm->id,
             'start_date'  => '2026-01-15',
             'target_date' => '2026-12-31',
         ]);
 
         $banking->projectMembers()->createMany([
-            ['user_id' => $admin->id,  'role_id' => $roles['project_manager']],
+            ['user_id' => $pm->id,     'role_id' => $roles['project_manager']],
             ['user_id' => $dev->id,    'role_id' => $roles['developer']],
             ['user_id' => $tester->id, 'role_id' => $roles['tester']],
         ]);
