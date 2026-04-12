@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import Pagination from '@/components/Pagination.vue';
+import PriorityBadge from '@/components/PriorityBadge.vue';
 import TaskFilters from '@/components/TaskFilters.vue';
 import RequirementKanbanBoard from '@/components/RequirementKanbanBoard.vue';
 import { type BreadcrumbItem, type Paginator, type TestCaseListItem } from '@/types';
@@ -43,12 +44,6 @@ const filterType       = ref('');
 
 // ── Style maps ────────────────────────────────────────────────────────────────
 
-const priorityClass: Record<string, string> = {
-    critical: 'bg-red-100 text-red-700',
-    high:     'bg-orange-100 text-orange-700',
-    medium:   'bg-amber-100 text-amber-700',
-    low:      'bg-slate-100 text-slate-500',
-};
 
 const statusClass: Record<string, string> = {
     draft:       'bg-slate-100 text-slate-500',
@@ -178,10 +173,7 @@ const typeIcon: Record<string, string> = {
                                     <span>{{ typeIcon[tc.type] }} {{ tc.type_label }}</span>
                                 </td>
                                 <td class="px-4 py-3">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                                        :class="priorityClass[tc.priority]">
-                                        {{ tc.priority_label }}
-                                    </span>
+                                    <PriorityBadge :priority="tc.priority" :label="tc.priority_label" />
                                 </td>
                                 <td class="px-4 py-3">
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"

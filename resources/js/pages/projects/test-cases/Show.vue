@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
+import PriorityBadge from '@/components/PriorityBadge.vue';
 import { type BreadcrumbItem, type SelectOption, type TestCase } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 
@@ -18,12 +19,6 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: props.tc.ref, href: '#' },
 ];
 
-const priorityClass: Record<string, string> = {
-    critical: 'bg-red-100 text-red-700',
-    high:     'bg-orange-100 text-orange-700',
-    medium:   'bg-amber-100 text-amber-700',
-    low:      'bg-slate-100 text-slate-500',
-};
 
 const statusClass: Record<string, string> = {
     draft:       'bg-slate-100 text-slate-500',
@@ -78,8 +73,7 @@ function confirmDelete() {
                     <div class="flex items-center gap-3 flex-wrap">
                         <span class="font-mono text-sm text-slate-400">{{ tc.ref }}</span>
                         <span class="text-xs text-slate-400">{{ tc.type_label }}</span>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                            :class="priorityClass[tc.priority]">{{ tc.priority_label }}</span>
+                        <PriorityBadge :priority="tc.priority" :label="tc.priority_label" />
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                             :class="statusClass[tc.status]">{{ tc.status_label }}</span>
                     </div>

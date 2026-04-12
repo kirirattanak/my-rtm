@@ -11,10 +11,10 @@ const emit = defineEmits<{
 }>();
 
 const ALL_PRIORITIES = [
-    { value: 'critical', label: 'Critical', class: 'bg-red-100 text-red-700 ring-red-300'         },
-    { value: 'high',     label: 'High',     class: 'bg-orange-100 text-orange-700 ring-orange-300' },
-    { value: 'medium',   label: 'Medium',   class: 'bg-amber-100 text-amber-700 ring-amber-300'    },
-    { value: 'low',      label: 'Low',      class: 'bg-slate-100 text-slate-500 ring-slate-300'    },
+    { value: 'critical', label: 'Critical', icon: 'critical', class: 'bg-red-100 text-red-700 ring-red-300'         },
+    { value: 'high',     label: 'High',     icon: 'high',     class: 'bg-orange-100 text-orange-700 ring-orange-300' },
+    { value: 'medium',   label: 'Medium',   icon: 'medium',   class: 'bg-amber-100 text-amber-700 ring-amber-300'    },
+    { value: 'low',      label: 'Low',      icon: 'low',      class: 'bg-slate-100 text-slate-500 ring-slate-300'    },
 ];
 
 function togglePriority(value: string) {
@@ -39,11 +39,27 @@ function isActive(value: string) {
                 :key="p.value"
                 type="button"
                 @click="togglePriority(p.value)"
-                class="text-xs font-medium px-2.5 py-1 rounded-full transition-all ring-1"
+                class="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full transition-all ring-1"
                 :class="isActive(p.value)
                     ? [p.class, 'ring-2 ring-offset-1']
                     : 'bg-white text-slate-400 ring-slate-200 hover:ring-slate-300'"
             >
+                <!-- Critical: double chevron up -->
+                <svg v-if="p.icon === 'critical'" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="17 11 12 6 7 11" /><polyline points="17 18 12 13 7 18" />
+                </svg>
+                <!-- High: chevron up -->
+                <svg v-else-if="p.icon === 'high'" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="18 15 12 9 6 15" />
+                </svg>
+                <!-- Medium: horizontal bar -->
+                <svg v-else-if="p.icon === 'medium'" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                <!-- Low: chevron down -->
+                <svg v-else-if="p.icon === 'low'" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9" />
+                </svg>
                 {{ p.label }}
             </button>
         </div>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
+import PriorityBadge from '@/components/PriorityBadge.vue';
 import { type BreadcrumbItem, type BusinessRequirement } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
@@ -19,12 +20,6 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: props.br.ref, href: '#' },
 ];
 
-const priorityClass: Record<string, string> = {
-    critical: 'bg-red-100 text-red-700',
-    high:     'bg-orange-100 text-orange-700',
-    medium:   'bg-amber-100 text-amber-700',
-    low:      'bg-slate-100 text-slate-500',
-};
 
 const statusClass: Record<string, string> = {
     draft:       'bg-slate-100 text-slate-500',
@@ -104,10 +99,7 @@ function removeDependant(dependantBrId: number) {
                 <div class="space-y-2">
                     <div class="flex items-center gap-3 flex-wrap">
                         <span class="font-mono text-sm text-slate-400">{{ br.ref }}</span>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                            :class="priorityClass[br.priority]">
-                            {{ br.priority_label }}
-                        </span>
+                        <PriorityBadge :priority="br.priority" :label="br.priority_label" />
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                             :class="statusClass[br.status]">
                             {{ br.status_label }}

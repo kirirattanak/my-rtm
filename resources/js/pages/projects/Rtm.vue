@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
+import PriorityBadge from '@/components/PriorityBadge.vue';
+import RtmGraph from '@/components/RtmGraph.vue';
 import { type BreadcrumbItem, type RtmBr, type RtmTr, type RtmTestCase } from '@/types';
 import { Head, Link } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
-import RtmGraph from '@/components/RtmGraph.vue';
 
 const props = defineProps<{
     project: { id: number; name: string };
@@ -31,12 +32,6 @@ const statusClass: Record<string, string> = {
     deprecated:  'bg-red-100 text-red-500',
 };
 
-const priorityClass: Record<string, string> = {
-    critical: 'bg-red-100 text-red-700',
-    high:     'bg-orange-100 text-orange-700',
-    medium:   'bg-amber-100 text-amber-700',
-    low:      'bg-slate-100 text-slate-500',
-};
 
 const runClass: Record<string, string> = {
     pass:    'bg-emerald-100 text-emerald-700',
@@ -295,9 +290,7 @@ function coverageColor(pct: number) {
                                     </Link>
                                 </div>
                                 <div class="flex items-center gap-2 flex-shrink-0">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="priorityClass[br.priority]">
-                                        {{ br.priority_label }}
-                                    </span>
+                                    <PriorityBadge :priority="br.priority" :label="br.priority_label" />
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass[br.status]">
                                         {{ br.status_label }}
                                     </span>
@@ -539,9 +532,7 @@ function coverageColor(pct: number) {
                                         </Link>
                                     </td>
                                     <td class="px-5 py-3">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="priorityClass[br.priority]">
-                                            {{ br.priority_label }}
-                                        </span>
+                                        <PriorityBadge :priority="br.priority" :label="br.priority_label" />
                                     </td>
                                     <td class="px-5 py-3">
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass[br.status]">

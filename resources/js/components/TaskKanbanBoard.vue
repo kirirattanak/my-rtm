@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PriorityBadge from '@/components/PriorityBadge.vue';
 import { type TaskListItem } from '@/types';
 import { Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
@@ -110,12 +111,6 @@ function cancelAdd() {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const PRIORITY_CLASSES: Record<string, string> = {
-    critical: 'bg-red-100 text-red-700',
-    high:     'bg-orange-100 text-orange-700',
-    medium:   'bg-amber-100 text-amber-700',
-    low:      'bg-slate-100 text-slate-500',
-};
 
 function isOverdue(due: string | null) {
     return due ? new Date(due) < new Date(new Date().toDateString()) : false;
@@ -177,10 +172,7 @@ function initials(name: string) {
                     <!-- Meta row -->
                     <div class="flex items-center gap-1.5 flex-wrap">
                         <!-- Priority -->
-                        <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-                            :class="PRIORITY_CLASSES[task.priority]">
-                            {{ task.priority_label }}
-                        </span>
+                        <PriorityBadge :priority="task.priority" :label="task.priority_label" size="xs" />
                         <!-- Category -->
                         <span v-if="task.category_label"
                             class="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700">

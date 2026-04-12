@@ -4,6 +4,7 @@ import Pagination from '@/components/Pagination.vue';
 import TaskStatusSelect from '@/components/TaskStatusSelect.vue';
 import TaskKanbanBoard from '@/components/TaskKanbanBoard.vue';
 import TaskFilters from '@/components/TaskFilters.vue';
+import PriorityBadge from '@/components/PriorityBadge.vue';
 import { type BreadcrumbItem, type Paginator, type SelectOption, type TaskListItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { useLocalStorage } from '@vueuse/core';
@@ -233,15 +234,7 @@ const availableCategories = computed(() => {
                                     <TaskStatusSelect :task="task" :project-id="project.id" />
                                 </td>
                                 <td class="px-5 py-3">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                                        :class="{
-                                            'bg-red-100 text-red-700':       task.priority === 'critical',
-                                            'bg-orange-100 text-orange-700': task.priority === 'high',
-                                            'bg-amber-100 text-amber-700':   task.priority === 'medium',
-                                            'bg-slate-100 text-slate-500':   task.priority === 'low',
-                                        }">
-                                        {{ task.priority_label }}
-                                    </span>
+                                    <PriorityBadge :priority="task.priority" :label="task.priority_label" />
                                 </td>
                                 <td class="px-5 py-3 text-xs text-slate-500">
                                     <span v-if="task.category_label"

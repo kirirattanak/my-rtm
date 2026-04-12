@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PriorityBadge from '@/components/PriorityBadge.vue';
 import { type RequirementStatus } from '@/types';
 import { Link, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
@@ -99,12 +100,6 @@ const routeModelParam = computed(() => {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const PRIORITY_CLASSES: Record<string, string> = {
-    critical: 'bg-red-100 text-red-700',
-    high:     'bg-orange-100 text-orange-700',
-    medium:   'bg-amber-100 text-amber-700',
-    low:      'bg-slate-100 text-slate-500',
-};
 
 function initials(name: string) {
     return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -171,11 +166,7 @@ function initials(name: string) {
                     <!-- Meta row -->
                     <div class="flex items-center gap-1.5 flex-wrap">
                         <!-- Priority -->
-                        <span v-if="item.priority"
-                            class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-                            :class="PRIORITY_CLASSES[item.priority]">
-                            {{ item.priority_label }}
-                        </span>
+                        <PriorityBadge v-if="item.priority" :priority="item.priority" :label="item.priority_label ?? ''" size="xs" />
                         <!-- Type -->
                         <span v-if="item.type_label"
                             class="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-sky-100 text-sky-700">
