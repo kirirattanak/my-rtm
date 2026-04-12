@@ -7,17 +7,15 @@ use App\Models\User;
 
 class ProjectPolicy
 {
-    public function viewAny(User $user): bool
+    public function viewAny(User $_user): bool
     {
         return true;
     }
 
     public function view(User $user, Project $project): bool
     {
-        // Org owners can view any project within their organisation
-        if ($user->isOrgOwner() && $user->organization_id === $project->organization_id) {
-            return true;
-        }
+        if ($user->isAdmin()) return true;
+        if ($user->isOrgOwner() && $user->organization_id === $project->organization_id) return true;
         return $project->hasMember($user);
     }
 
