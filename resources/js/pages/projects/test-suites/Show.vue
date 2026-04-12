@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { type BreadcrumbItem, type TestSuiteDetail, type TestRunStatus } from '@/types';
+import { type BreadcrumbItem, type TestSuiteDetail } from '@/types';
 import { Head, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
@@ -64,7 +64,7 @@ function passRate(summary: TestSuiteDetail['summary']): number {
             <div class="flex items-start justify-between">
                 <div>
                     <h1 class="text-xl font-semibold text-slate-900">{{ suite.name }}</h1>
-                    <p v-if="suite.description" class="text-sm text-slate-500 mt-0.5">{{ suite.description }}</p>
+                    <div v-if="suite.description" class="prose prose-sm max-w-none text-slate-500 mt-0.5" v-html="suite.description" />
                     <p class="text-xs text-slate-400 mt-1">Created by {{ suite.creator }} · {{ suite.created_at }}</p>
                 </div>
                 <button
@@ -144,6 +144,14 @@ function passRate(summary: TestSuiteDetail['summary']): number {
                             >
                                 <span class="text-xs font-mono text-slate-400">{{ tc.ref }}</span>
                                 <span class="text-sm text-slate-800 flex-1">{{ tc.title }}</span>
+                                <a :href="route('projects.test-cases.show', [project.id, tc.id])"
+                                    @click.stop
+                                    title="Open test case"
+                                    class="text-slate-300 hover:text-primary transition flex-shrink-0">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                </a>
                                 <span
                                     class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                                     :class="runClass[tc.latest_run ?? 'not_run']"

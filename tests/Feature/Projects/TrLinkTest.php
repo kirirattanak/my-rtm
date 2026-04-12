@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Projects;
 
-use App\Enums\UserRole;
+use App\Models\Role;
 use App\Models\BusinessRequirement;
 use App\Models\Project;
 use App\Models\TechnicalRequirement;
@@ -18,9 +18,9 @@ class TrLinkTest extends TestCase
 
     private function makeUserAndProject(string $globalRole = 'business_analyst'): array
     {
-        $user    = User::factory()->create(['role' => UserRole::from($globalRole)]);
+        $user    = User::factory()->withRole($globalRole)->create();
         $project = Project::factory()->create();
-        $project->projectMembers()->create(['user_id' => $user->id, 'role' => $globalRole]);
+        $project->projectMembers()->create(['user_id' => $user->id, 'role_id' => Role::where('slug', $globalRole)->value('id')]);
 
         return [$user, $project];
     }
@@ -65,9 +65,9 @@ class TrLinkTest extends TestCase
 
     public function test_viewer_cannot_link_tr_to_br(): void
     {
-        $user    = User::factory()->create(['role' => UserRole::Viewer]);
+        $user    = User::factory()->create();
         $project = Project::factory()->create();
-        $project->projectMembers()->create(['user_id' => $user->id, 'role' => 'viewer']);
+        $project->projectMembers()->create(['user_id' => $user->id, 'role_id' => Role::where('slug', 'viewer')->value('id')]);
 
         $owner = User::factory()->businessAnalyst()->create();
         $br    = BusinessRequirement::factory()->create(['project_id' => $project->id, 'number' => 1, 'created_by' => $owner->id]);

@@ -81,7 +81,7 @@ class TestCaseController extends Controller
         $tc = $testCase->load([
             'creator:id,name',
             'assignee:id,name',
-            'technicalRequirements:id,number,title,status',
+            'technicalRequirements:id,number,title,type,status',
             'runs.executor:id,name',
         ]);
 

@@ -2,7 +2,6 @@
 
 namespace App\Policies;
 
-use App\Enums\UserRole;
 use App\Models\Project;
 use App\Models\TestCase;
 use App\Models\User;
@@ -11,42 +10,41 @@ class TestCasePolicy
 {
     public function viewAny(User $user, Project $project): bool
     {
-        return $user->role === UserRole::Admin || $project->hasMember($user);
+        return $user->hasPermission('tc.view', $project);
     }
 
     public function view(User $user, TestCase $tc): bool
     {
-        return $user->role === UserRole::Admin || $tc->project->hasMember($user);
+        return $user->hasPermission('tc.view', $tc->project);
     }
 
     public function create(User $user, Project $project): bool
     {
-        if ($user->role === UserRole::Admin) return true;
-
-        $memberRole = $project->memberRole($user);
-
-        return in_array($memberRole, [
-            UserRole::ProjectManager,
-            UserRole::BusinessAnalyst,
-            UserRole::Developer,
-            UserRole::Tester,
-        ]);
+        return $user->hasPermission('tc.create', $project);
     }
 
     public function update(User $user, TestCase $tc): bool
     {
-        return $this->create($user, $tc->project);
+        return $user->hasPermission('tc.edit', $tc->project);
     }
 
     public function delete(User $user, TestCase $tc): bool
     {
-        if ($user->role === UserRole::Admin) return true;
+        return $user->hasPermission('tc.delete', $tc->project);
+    }
 
-        return $tc->project->memberRole($user) === UserRole::ProjectManager;
+    public function import(User $user, Project $project): bool
+    {
+        return $user->hasPermission('tc.import', $project);
+    }
+
+    public function export(User $user, Project $project): bool
+    {
+        return $user->hasPermission('tc.export', $project);
     }
 
     public function logRun(User $user, TestCase $tc): bool
     {
-        return $this->create($user, $tc->project);
+        return $user->hasPermission('test_runs.create', $tc->project);
     }
 }

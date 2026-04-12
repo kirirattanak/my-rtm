@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-vue-next';
 
 export interface Auth {
     user: User;
+    is_admin: boolean;
 }
 
 export interface BreadcrumbItem {
@@ -32,29 +33,13 @@ export interface SharedData {
     };
 }
 
-export type UserRole =
-    | 'admin'
-    | 'project_manager'
-    | 'business_analyst'
-    | 'developer'
-    | 'tester'
-    | 'viewer';
-
-export const USER_ROLE_LABELS: Record<UserRole, string> = {
-    admin:            'Admin',
-    project_manager:  'Project Manager',
-    business_analyst: 'Business Analyst',
-    developer:        'Developer',
-    tester:           'Tester',
-    viewer:           'Viewer',
-};
-
 export interface User {
     id: number;
     name: string;
     email: string;
     avatar?: string;
-    role: UserRole;
+    role_id: number | null;
+    role_name: string | null;
     is_active: boolean;
     email_verified_at: string | null;
     created_at: string;
@@ -64,8 +49,7 @@ export interface User {
 export interface Invitation {
     id: number;
     email: string;
-    role: UserRole;
-    role_label: string;
+    role: string;
     invited_by: string;
     status: 'pending' | 'accepted' | 'expired';
     expires_at: string;
@@ -79,8 +63,8 @@ export interface ProjectMember {
     user_id: number;
     name: string;
     email: string;
-    role: UserRole;
-    role_label: string;
+    role_id: number | null;
+    role_name: string | null;
 }
 
 export interface Project {
@@ -127,6 +111,15 @@ export interface Comment {
     created_at: string;
 }
 
+export interface BrDependencyItem {
+    id: number;
+    ref: string;
+    title: string;
+    status: RequirementStatus;
+    status_label: string;
+    status_color: string;
+}
+
 export interface BrListItem {
     id: number;
     ref: string;
@@ -141,6 +134,8 @@ export interface BrListItem {
     category: string | null;
     creator: Pick<User, 'id' | 'name'>;
     tr_count: number;
+    blocking_count: number;
+    is_blocked: boolean;
     created_at: string;
 }
 
@@ -163,6 +158,8 @@ export interface BusinessRequirement extends BrListItem {
     description: string | null;
     tags: string[];
     updated_at: string;
+    blocked_by: BrDependencyItem[];
+    blocks: BrDependencyItem[];
     technical_requirements: {
         id: number;
         ref: string;

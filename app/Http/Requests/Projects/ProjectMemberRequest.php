@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Projects;
 
-use App\Enums\UserRole;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -18,7 +17,7 @@ class ProjectMemberRequest extends FormRequest
                 'exists:users,id',
                 Rule::unique('project_members')->where('project_id', $project->id),
             ],
-            'role' => ['required', Rule::in(UserRole::values())],
+            'role_id' => ['required', 'integer', 'exists:roles,id'],
         ];
     }
 }

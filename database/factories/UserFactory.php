@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Enums\UserRole;
+use App\Models\Role;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -21,35 +21,40 @@ class UserFactory extends Factory
             'email'              => fake()->unique()->safeEmail(),
             'email_verified_at'  => now(),
             'password'           => static::$password ??= Hash::make('password'),
-            'role'               => UserRole::Viewer,
+            'role_id'            => fn () => Role::where('slug', 'viewer')->value('id'),
             'is_active'          => true,
             'remember_token'     => Str::random(10),
         ];
     }
 
+    public function withRole(string $slug): static
+    {
+        return $this->state(fn () => ['role_id' => Role::where('slug', $slug)->value('id')]);
+    }
+
     public function admin(): static
     {
-        return $this->state(fn () => ['role' => UserRole::Admin]);
+        return $this->state(fn () => ['role_id' => Role::where('slug', 'admin')->value('id')]);
     }
 
     public function projectManager(): static
     {
-        return $this->state(fn () => ['role' => UserRole::ProjectManager]);
+        return $this->state(fn () => ['role_id' => Role::where('slug', 'project_manager')->value('id')]);
     }
 
     public function businessAnalyst(): static
     {
-        return $this->state(fn () => ['role' => UserRole::BusinessAnalyst]);
+        return $this->state(fn () => ['role_id' => Role::where('slug', 'business_analyst')->value('id')]);
     }
 
     public function developer(): static
     {
-        return $this->state(fn () => ['role' => UserRole::Developer]);
+        return $this->state(fn () => ['role_id' => Role::where('slug', 'developer')->value('id')]);
     }
 
     public function tester(): static
     {
-        return $this->state(fn () => ['role' => UserRole::Tester]);
+        return $this->state(fn () => ['role_id' => Role::where('slug', 'tester')->value('id')]);
     }
 
     public function unverified(): static

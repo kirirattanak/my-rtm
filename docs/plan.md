@@ -342,8 +342,97 @@ Admins can create custom roles with any name and assign any combination of permi
 
 ---
 
+## Milestone 11 — BR Dependency Graph ✅
+
+**Goal:** Allow business requirements to declare blocking relationships with each other, visualise those dependencies as a directed graph, and surface prioritisation guidance based on the dependency chain.
+
+---
+
+### 11.1 — Data Model ✅
+
+**New table: `br_dependencies`**
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | bigint PK | |
+| `blocking_br_id` | FK → `business_requirements` | the BR that must be resolved first |
+| `blocked_br_id` | FK → `business_requirements` | the BR that cannot proceed until the blocker is done |
+| `created_by` | FK → `users` | who created the link |
+| `timestamps` | | |
+
+Constraints:
+- `UNIQUE (blocking_br_id, blocked_br_id)` — no duplicate links
+- Self-link guard enforced in `BrDependencyController`
+- Cycle detection enforced in `BrDependencyController` via BFS traversal
+
+---
+
+### 11.2 — Relationship API ✅
+
+Two self-referential `BelongsToMany` relationships on `BusinessRequirement`:
+- `blockingBrs()` — BRs that this BR is blocking (outgoing edges, pivot: `blocking_br_id`)
+- `blockedByBrs()` — BRs that are blocking this BR (incoming edges, pivot: `blocked_br_id`)
+
+`getIsBlockedAttribute()` — true when the `blockedByBrs` relation is loaded and contains at least one BR not in `implemented` status.
+
+---
+
+### 11.3 — BR Detail Page Changes ✅
+
+On the BR show page, a new **Dependencies** panel:
+- **Blocked By** section — searchable picker (search input + select dropdown) to add a prerequisite BR. Each existing blocker shows ref, title, status badge, and a Remove button.
+- **Blocks** section — informational list of BRs that depend on this one, each with a Remove button.
+- ⚠ **Blocked** badge in the BR header when `is_blocked` is true.
+- "View graph →" link in the panel header.
+
+---
+
+### 11.4 — Dependency Graph View ✅
+
+Page: `GET /projects/{project}/requirements/business/graph` → `BrGraph.vue`
+
+Custom SVG DAG (no external library):
+- **Nodes:** 240×82px rounded rectangles. Fill/stroke colour encodes status. Amber border = blocked; green border = ready (all blockers implemented). Titles word-wrap up to 2 lines (~30 chars each) using SVG `<tspan>` elements — no truncation.
+- **Edges:** cubic bezier curves with SVG arrow markers. Amber = blocker pending; green = blocker implemented.
+- **Layout:** longest-path topological layer assignment; nodes distributed vertically within each layer.
+- **Unlinked BRs:** shown in a separate table below the graph.
+- **Interactions:** hover tooltip (Teleport) showing ref, title, priority, status, and blocked/ready state; click navigates to BR detail.
+- **Legend** embedded inside the SVG (below the graph area) explaining status colours and edge/node border states. Being part of the SVG ensures the legend is included in PNG exports.
+- **Export PNG** button — client-side only; serializes the SVG (with embedded legend and `#f8fafc` background) to a canvas at 2× resolution and triggers a browser download named `br-dependency-graph-{project-name}.png`. Button is hidden when there are no linked nodes.
+
+---
+
+### 11.5 — BR List Page Changes ✅
+
+- **Dependency Graph** button in the header (links to graph view).
+- **Blockers** column showing the count of incoming blockers (amber when > 0, dash when none).
+- **Blocked** badge inline with the title on rows where `is_blocked` is true.
+
+---
+
+### 11.6 — Cycle Detection ✅
+
+`BrDependencyController::wouldCreateCycle()` — BFS from `blocked_br_id` following outgoing blocking edges. If `blocking_br_id` is reachable, the link is rejected with a validation error: _"This link would create a circular dependency."_
+
+---
+
+### 11.7 — Seeder ✅
+
+`BrDependencySeeder` seeds two links for the E-Commerce Platform project:
+- BR-001 (Auth) blocks BR-003 (Checkout)
+- BR-002 (Catalog) blocks BR-003 (Checkout)
+
+This produces a diamond shape in the graph with BR-003 in a "Blocked" state, and BR-004 in the unlinked list.
+
+### Access Rules
+- Users with `br.edit` permission can add and remove dependency links
+- All project members with `br.view` can see the graph and dependency panels
+
+---
+
 ## Delivery Notes
 
 - v0.1 ships Milestones 1–8 as a fully functional RTM application
 - v0.2 ships Milestones 9–10: configurable permissions and remaining reporting features
+- Milestone 11 extends v0.2 with BR dependency tracking and graph visualisation
 - Auth and roles (Milestone 1) underpin all access rules throughout the application

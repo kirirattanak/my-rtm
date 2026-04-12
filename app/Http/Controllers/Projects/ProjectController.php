@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Projects;
 
 use App\Enums\ProjectStatus;
-use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Projects\ProjectRequest;
 use App\Http\Resources\ProjectResource;
 use App\Models\Project;
+use App\Models\Role;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -29,6 +29,7 @@ class ProjectController extends Controller
 
         return Inertia::render('projects/Index', [
             'projects' => $projects,
+            'can'      => ['create' => $user->can('create', Project::class)],
         ]);
     }
 
@@ -58,7 +59,7 @@ class ProjectController extends Controller
         // Owner is automatically added as a Project Manager member
         $project->projectMembers()->create([
             'user_id' => $request->user()->id,
-            'role'    => UserRole::ProjectManager->value,
+            'role_id' => Role::where('slug', 'project_manager')->value('id'),
         ]);
 
         return to_route('projects.show', $project)
@@ -69,7 +70,7 @@ class ProjectController extends Controller
     {
         $this->authorize('view', $project);
 
-        $project->load(['owner', 'projectMembers.user']);
+        $project->load(['owner', 'projectMembers.user', 'projectMembers.role']);
 
         // Coverage stats
         $trs = $project->technicalRequirements()->with('testCases.runs')->get();
@@ -163,12 +164,12 @@ class ProjectController extends Controller
                 'target_date'  => $project->target_date?->toDateString(),
                 'created_at'   => $project->created_at->toDateString(),
                 'members'      => $project->projectMembers->map(fn ($m) => [
-                    'id'         => $m->id,
-                    'user_id'    => $m->user_id,
-                    'name'       => $m->user->name,
-                    'email'      => $m->user->email,
-                    'role'       => $m->role->value,
-                    'role_label' => $m->role->label(),
+                    'id'        => $m->id,
+                    'user_id'   => $m->user_id,
+                    'name'      => $m->user->name,
+                    'email'     => $m->user->email,
+                    'role_id'   => $m->role_id,
+                    'role_name' => $m->role?->name,
                 ]),
             ],
             'coverage' => $coverage,

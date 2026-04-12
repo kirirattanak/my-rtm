@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Projects;
 
-use App\Enums\UserRole;
+use App\Models\Role;
 use App\Models\BusinessRequirement;
 use App\Models\Comment;
 use App\Models\Project;
@@ -19,9 +19,9 @@ class CommentTest extends TestCase
 
     private function makeUserAndProject(string $globalRole = 'business_analyst'): array
     {
-        $user    = User::factory()->create(['role' => UserRole::from($globalRole)]);
+        $user    = User::factory()->withRole($globalRole)->create();
         $project = Project::factory()->create();
-        $project->projectMembers()->create(['user_id' => $user->id, 'role' => $globalRole]);
+        $project->projectMembers()->create(['user_id' => $user->id, 'role_id' => Role::where('slug', $globalRole)->value('id')]);
 
         return [$user, $project];
     }
@@ -116,8 +116,8 @@ class CommentTest extends TestCase
         $br      = $this->br($project, $owner);
         $comment = $br->comments()->create(['user_id' => $owner->id, 'body' => 'Theirs.']);
 
-        $other = User::factory()->create(['role' => UserRole::BusinessAnalyst]);
-        $project->projectMembers()->create(['user_id' => $other->id, 'role' => 'business_analyst']);
+        $other = User::factory()->businessAnalyst()->create();
+        $project->projectMembers()->create(['user_id' => $other->id, 'role_id' => Role::where('slug', 'business_analyst')->value('id')]);
 
         $this->actingAs($other)
             ->delete(route('projects.requirements.comments.destroy', [$project, $comment]))

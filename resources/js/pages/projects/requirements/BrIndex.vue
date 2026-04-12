@@ -63,6 +63,14 @@ const statusClass: Record<string, string> = {
                     <p class="text-sm text-slate-500 mt-0.5">{{ project.name }}</p>
                 </div>
                 <div class="flex items-center gap-2">
+                    <Link
+                        :href="route('projects.requirements.business.graph', project.id)"
+                        class="inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        Dependency Graph
+                    </Link>
                     <Link v-if="can.create"
                         :href="route('projects.requirements.business.import', project.id)"
                         class="inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition">
@@ -104,6 +112,7 @@ const statusClass: Record<string, string> = {
                             <th class="px-4 py-3 text-left font-medium text-slate-500">Status</th>
                             <th class="px-4 py-3 text-left font-medium text-slate-500">Category</th>
                             <th class="px-4 py-3 text-left font-medium text-slate-500">TRs</th>
+                            <th class="px-4 py-3 text-left font-medium text-slate-500">Blockers</th>
                             <th class="px-4 py-3 text-left font-medium text-slate-500">Created by</th>
                         </tr>
                     </thead>
@@ -112,7 +121,13 @@ const statusClass: Record<string, string> = {
                             class="hover:bg-slate-50 transition cursor-pointer"
                             @click="$inertia.visit(route('projects.requirements.business.show', [project.id, br.id]))">
                             <td class="px-4 py-3 font-mono text-xs text-slate-500">{{ br.ref }}</td>
-                            <td class="px-4 py-3 text-slate-800 font-medium">{{ br.title }}</td>
+                            <td class="px-4 py-3 text-slate-800 font-medium">
+                                {{ br.title }}
+                                <span v-if="br.is_blocked"
+                                    class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700">
+                                    Blocked
+                                </span>
+                            </td>
                             <td class="px-4 py-3">
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                                     :class="priorityClass[br.priority]">
@@ -127,6 +142,10 @@ const statusClass: Record<string, string> = {
                             </td>
                             <td class="px-4 py-3 text-slate-500">{{ br.category ?? '—' }}</td>
                             <td class="px-4 py-3 text-slate-500">{{ br.tr_count }}</td>
+                            <td class="px-4 py-3 text-slate-500">
+                                <span v-if="br.blocking_count > 0" class="text-amber-600 font-medium">{{ br.blocking_count }}</span>
+                                <span v-else class="text-slate-300">—</span>
+                            </td>
                             <td class="px-4 py-3 text-slate-500">{{ br.creator?.name }}</td>
                         </tr>
                     </tbody>

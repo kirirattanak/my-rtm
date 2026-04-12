@@ -49,7 +49,9 @@ class ReportController extends Controller
 
         $trs = $project->technicalRequirements()
             ->withExists([
-                'runs as has_passing_run' => fn ($q) => $q->where('status', 'pass'),
+                'testCases as has_passing_run' => fn ($q) => $q->whereHas(
+                    'runs', fn ($r) => $r->where('status', 'pass')
+                ),
             ])
             ->get(['id']);
 

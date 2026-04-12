@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { type BreadcrumbItem, type Invitation, type UserRole } from '@/types';
+import { type BreadcrumbItem } from '@/types';  
 import { Head, router, useForm } from '@inertiajs/vue3';
 
+type InvitationRow = { id: number; email: string; role: string; invited_by: string; status: string; expires_at: string; created_at: string };
+type RoleOption = { id: number; name: string; slug: string; is_system: boolean };
+
 defineProps<{
-    invitations: Invitation[],
-    roles: { value: UserRole; label: string }[],
+    invitations: InvitationRow[];
+    roles: RoleOption[];
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -15,7 +18,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const form = useForm({
     email: '',
-    role: 'viewer' as UserRole,
+    role: 'viewer',
 });
 
 function send() {
@@ -24,7 +27,7 @@ function send() {
     });
 }
 
-function revoke(invitation: Invitation) {
+function revoke(invitation: InvitationRow) {
     router.delete(route('admin.invitations.destroy', invitation.id));
 }
 
@@ -66,7 +69,7 @@ const statusClass: Record<string, string> = {
                         <label class="block text-xs font-medium text-slate-600 mb-1">Role</label>
                         <select v-model="form.role"
                             class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/50">
-                            <option v-for="r in roles" :key="r.value" :value="r.value">{{ r.label }}</option>
+                            <option v-for="r in roles" :key="r.slug" :value="r.slug">{{ r.name }}</option>
                         </select>
                     </div>
                     <button type="submit" :disabled="form.processing"
@@ -96,7 +99,7 @@ const statusClass: Record<string, string> = {
                         <tr v-for="inv in invitations" :key="inv.id"
                             class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                             <td class="px-4 py-3 text-slate-700">{{ inv.email }}</td>
-                            <td class="px-4 py-3 text-slate-600">{{ inv.role_label }}</td>
+                            <td class="px-4 py-3 text-slate-600">{{ roles.find(r => r.slug === inv.role)?.name ?? inv.role }}</td>
                             <td class="px-4 py-3 text-slate-600">{{ inv.invited_by }}</td>
                             <td class="px-4 py-3">
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize"

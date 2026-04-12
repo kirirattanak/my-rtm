@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type RtmBr } from '@/types';
 import { VueFlow, useVueFlow, type Node, type Edge, Position } from '@vue-flow/core';
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 
 const props = defineProps<{
     matrix: RtmBr[];
@@ -15,20 +15,6 @@ const X_TR   = 380;
 const X_TC   = 700;
 const Y_GAP  = 90;
 
-const runColors: Record<string, string> = {
-    pass:    '#10b981',
-    fail:    '#ef4444',
-    blocked: '#f59e0b',
-    skipped: '#94a3b8',
-};
-
-const statusBg: Record<string, string> = {
-    draft:       '#f1f5f9',
-    review:      '#dbeafe',
-    approved:    '#d1fae5',
-    implemented: '#ede9fe',
-    deprecated:  '#fee2e2',
-};
 
 const { nodes, edges } = computed(() => {
     const nodes: Node[] = [];
@@ -110,7 +96,7 @@ const { nodes, edges } = computed(() => {
     return { nodes, edges };
 }).value;
 
-const { fitView } = useVueFlow();
+useVueFlow();
 </script>
 
 <template>

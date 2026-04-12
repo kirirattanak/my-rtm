@@ -18,11 +18,6 @@ const addType = ref<LinkType>('br');
 const addId   = ref('');
 const search  = ref('');
 
-const typeConfig: Record<LinkType, { label: string; color: string; badge: string }> = {
-    br: { label: 'Business Requirement', color: 'text-sky-600',    badge: 'bg-sky-100 text-sky-700' },
-    tr: { label: 'Technical Requirement', color: 'text-purple-600', badge: 'bg-purple-100 text-purple-700' },
-    tc: { label: 'Test Case',             color: 'text-emerald-600', badge: 'bg-emerald-100 text-emerald-700' },
-};
 
 function poolFor(type: LinkType): SelectOption[] {
     return type === 'br' ? props.linkable_brs

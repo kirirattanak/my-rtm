@@ -2,7 +2,6 @@
 
 namespace App\Policies;
 
-use App\Enums\UserRole;
 use App\Models\Project;
 use App\Models\Sprint;
 use App\Models\User;
@@ -11,28 +10,26 @@ class SprintPolicy
 {
     public function viewAny(User $user, Project $project): bool
     {
-        return $user->role === UserRole::Admin || $project->hasMember($user);
+        return $user->hasPermission('sprints.view', $project);
     }
 
     public function view(User $user, Sprint $sprint): bool
     {
-        return $user->role === UserRole::Admin || $sprint->project->hasMember($user);
+        return $user->hasPermission('sprints.view', $sprint->project);
     }
 
     public function create(User $user, Project $project): bool
     {
-        if ($user->role === UserRole::Admin) return true;
-        $role = $project->memberRole($user);
-        return in_array($role, [UserRole::ProjectManager]);
+        return $user->hasPermission('sprints.create', $project);
     }
 
     public function update(User $user, Sprint $sprint): bool
     {
-        return $this->create($user, $sprint->project);
+        return $user->hasPermission('sprints.edit', $sprint->project);
     }
 
     public function delete(User $user, Sprint $sprint): bool
     {
-        return $this->create($user, $sprint->project);
+        return $user->hasPermission('sprints.delete', $sprint->project);
     }
 }

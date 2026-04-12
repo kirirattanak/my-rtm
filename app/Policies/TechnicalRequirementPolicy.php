@@ -2,7 +2,6 @@
 
 namespace App\Policies;
 
-use App\Enums\UserRole;
 use App\Models\Project;
 use App\Models\TechnicalRequirement;
 use App\Models\User;
@@ -11,42 +10,41 @@ class TechnicalRequirementPolicy
 {
     public function viewAny(User $user, Project $project): bool
     {
-        return $user->role === UserRole::Admin || $project->hasMember($user);
+        return $user->hasPermission('tr.view', $project);
     }
 
     public function view(User $user, TechnicalRequirement $tr): bool
     {
-        return $user->role === UserRole::Admin || $tr->project->hasMember($user);
+        return $user->hasPermission('tr.view', $tr->project);
     }
 
     public function create(User $user, Project $project): bool
     {
-        if ($user->role === UserRole::Admin) {
-            return true;
-        }
-
-        $memberRole = $project->memberRole($user);
-
-        return in_array($memberRole, [
-            UserRole::ProjectManager,
-            UserRole::BusinessAnalyst,
-            UserRole::Developer,
-        ]);
+        return $user->hasPermission('tr.create', $project);
     }
 
     public function update(User $user, TechnicalRequirement $tr): bool
     {
-        return $this->create($user, $tr->project);
+        return $user->hasPermission('tr.edit', $tr->project);
     }
 
     public function delete(User $user, TechnicalRequirement $tr): bool
     {
-        if ($user->role === UserRole::Admin) {
-            return true;
-        }
+        return $user->hasPermission('tr.delete', $tr->project);
+    }
 
-        $memberRole = $tr->project->memberRole($user);
+    public function changeStatus(User $user, TechnicalRequirement $tr): bool
+    {
+        return $user->hasPermission('tr.change_status', $tr->project);
+    }
 
-        return $memberRole === UserRole::ProjectManager;
+    public function import(User $user, Project $project): bool
+    {
+        return $user->hasPermission('tr.import', $project);
+    }
+
+    public function export(User $user, Project $project): bool
+    {
+        return $user->hasPermission('tr.export', $project);
     }
 }

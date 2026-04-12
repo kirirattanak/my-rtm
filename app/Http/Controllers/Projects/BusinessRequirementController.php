@@ -24,6 +24,8 @@ class BusinessRequirementController extends Controller
         $brs = $project->businessRequirements()
             ->with('creator:id,name')
             ->withCount('technicalRequirements')
+            ->withCount('blockedByBrs as blocking_count')
+            ->withExists(['blockedByBrs as is_blocked' => fn ($q) => $q->where('status', '!=', 'implemented')])
             ->orderBy('number')
             ->paginate(25)
             ->through(fn ($br) => BusinessRequirementResource::list($br));
@@ -83,25 +85,32 @@ class BusinessRequirementController extends Controller
             'creator:id,name',
             'technicalRequirements:id,number,title,status,type',
             'comments.user:id,name',
+            'blockedByBrs:id,number,title,status',
+            'blockingBrs:id,number,title,status',
         ]);
 
-        $linkedTrIds = $br->technicalRequirements->pluck('id')->toArray();
+        $linkedTrIds     = $br->technicalRequirements->pluck('id')->toArray();
+        $blockerIds      = $br->blockedByBrs->pluck('id')->toArray();
 
         $linkableTrs = $project->technicalRequirements()
             ->whereNotIn('id', $linkedTrIds)
             ->orderBy('number')
             ->get()
-            ->map(fn ($tr) => [
-                'id'    => $tr->id,
-                'ref'   => $tr->ref,
-                'title' => $tr->title,
-            ]);
+            ->map(fn ($tr) => ['id' => $tr->id, 'ref' => $tr->ref, 'title' => $tr->title]);
+
+        $linkableBrs = $project->businessRequirements()
+            ->where('id', '!=', $br->id)
+            ->whereNotIn('id', $blockerIds)
+            ->orderBy('number')
+            ->get()
+            ->map(fn ($b) => ['id' => $b->id, 'ref' => $b->ref, 'title' => $b->title]);
 
         return Inertia::render('projects/requirements/BrShow', [
-            'project'     => $project->only('id', 'name'),
+            'project'      => $project->only('id', 'name'),
             'linkable_trs' => $linkableTrs,
-            'br'          => BusinessRequirementResource::detail($br),
-            'can' => [
+            'linkable_brs' => $linkableBrs,
+            'br'           => BusinessRequirementResource::detail($br),
+            'can'          => [
                 'edit'   => $request->user()->can('update', $br),
                 'delete' => $request->user()->can('delete', $br),
             ],
@@ -155,6 +164,34 @@ class BusinessRequirementController extends Controller
 
         return redirect()->route('projects.requirements.business.index', $project)
             ->with('success', 'Business requirement deleted.');
+    }
+
+    public function graph(Request $request, Project $project): Response
+    {
+        $this->authorize('viewAny', [BusinessRequirement::class, $project]);
+
+        $brs = $project->businessRequirements()
+            ->get(['id', 'number', 'title', 'status', 'priority']);
+
+        $edges = \Illuminate\Support\Facades\DB::table('br_dependencies')
+            ->whereIn('blocking_br_id', $brs->pluck('id'))
+            ->orWhereIn('blocked_br_id', $brs->pluck('id'))
+            ->get(['blocking_br_id', 'blocked_br_id']);
+
+        return Inertia::render('projects/requirements/BrGraph', [
+            'project' => $project->only('id', 'name'),
+            'nodes'   => $brs->map(fn ($br) => [
+                'id'       => $br->id,
+                'ref'      => $br->ref,
+                'title'    => $br->title,
+                'status'   => $br->status->value,
+                'priority' => $br->priority->value,
+            ]),
+            'edges'   => $edges->map(fn ($e) => [
+                'from' => $e->blocking_br_id,
+                'to'   => $e->blocked_br_id,
+            ]),
+        ]);
     }
 
     public function importCreate(Project $project): Response

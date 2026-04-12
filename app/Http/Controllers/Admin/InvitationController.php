@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\Invitation;
+use App\Models\Role;
 use App\Models\User;
 use App\Notifications\InvitationNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -25,22 +24,20 @@ class InvitationController extends Controller
             ->orderByDesc('created_at')
             ->get()
             ->map(fn (Invitation $inv) => [
-                'id'          => $inv->id,
-                'email'       => $inv->email,
-                'role'        => $inv->role->value,
-                'role_label'  => $inv->role->label(),
-                'invited_by'  => $inv->inviter->name,
-                'status'      => $inv->isAccepted() ? 'accepted' : ($inv->isExpired() ? 'expired' : 'pending'),
-                'expires_at'  => $inv->expires_at->toDateString(),
-                'created_at'  => $inv->created_at->toDateString(),
+                'id'         => $inv->id,
+                'email'      => $inv->email,
+                'role'       => $inv->role,
+                'invited_by' => $inv->inviter->name,
+                'status'     => $inv->isAccepted() ? 'accepted' : ($inv->isExpired() ? 'expired' : 'pending'),
+                'expires_at' => $inv->expires_at->toDateString(),
+                'created_at' => $inv->created_at->toDateString(),
             ]);
+
+        $roles = Role::orderBy('name')->get(['id', 'name', 'slug', 'is_system']);
 
         return Inertia::render('admin/Invitations', [
             'invitations' => $invitations,
-            'roles'       => collect(UserRole::cases())->map(fn ($r) => [
-                'value' => $r->value,
-                'label' => $r->label(),
-            ]),
+            'roles'       => $roles,
         ]);
     }
 
@@ -50,7 +47,7 @@ class InvitationController extends Controller
 
         $request->validate([
             'email' => ['required', 'email', 'unique:users,email', 'unique:invitations,email'],
-            'role'  => ['required', Rule::in(UserRole::values())],
+            'role'  => ['required', 'string', 'exists:roles,slug'],
         ]);
 
         $invitation = Invitation::create([

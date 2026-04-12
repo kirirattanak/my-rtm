@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers\Projects;
 
-use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Projects\ProjectMemberRequest;
 use App\Http\Requests\Projects\ProjectMemberRoleRequest;
 use App\Models\Project;
 use App\Models\ProjectMember;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,13 +20,13 @@ class ProjectMemberController extends Controller
     {
         $this->authorize('manageMembers', $project);
 
-        $members = $project->projectMembers()->with('user')->get()->map(fn (ProjectMember $m) => [
-            'id'         => $m->id,
-            'user_id'    => $m->user_id,
-            'name'       => $m->user->name,
-            'email'      => $m->user->email,
-            'role'       => $m->role->value,
-            'role_label' => $m->role->label(),
+        $members = $project->projectMembers()->with(['user', 'role'])->get()->map(fn (ProjectMember $m) => [
+            'id'        => $m->id,
+            'user_id'   => $m->user_id,
+            'name'      => $m->user->name,
+            'email'     => $m->user->email,
+            'role_id'   => $m->role_id,
+            'role_name' => $m->role?->name,
         ]);
 
         $addableUsers = User::where('is_active', true)
@@ -36,13 +35,10 @@ class ProjectMemberController extends Controller
             ->get(['id', 'name', 'email']);
 
         return Inertia::render('projects/Members', [
-            'project' => ['id' => $project->id, 'name' => $project->name],
-            'members' => $members,
+            'project'       => ['id' => $project->id, 'name' => $project->name],
+            'members'       => $members,
             'addable_users' => $addableUsers,
-            'roles' => collect(UserRole::cases())->map(fn ($r) => [
-                'value' => $r->value,
-                'label' => $r->label(),
-            ]),
+            'roles'         => Role::orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -54,7 +50,7 @@ class ProjectMemberController extends Controller
 
         $project->projectMembers()->create([
             'user_id' => $data['user_id'],
-            'role'    => $data['role'],
+            'role_id' => $data['role_id'],
         ]);
 
         return back()->with('success', 'Member added.');
@@ -64,9 +60,7 @@ class ProjectMemberController extends Controller
     {
         $this->authorize('manageMembers', $project);
 
-        $data = $request->validated();
-
-        $member->update(['role' => $data['role']]);
+        $member->update(['role_id' => $request->validated()['role_id']]);
 
         return back()->with('success', 'Member role updated.');
     }

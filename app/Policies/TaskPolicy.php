@@ -2,7 +2,6 @@
 
 namespace App\Policies;
 
-use App\Enums\UserRole;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
@@ -11,40 +10,36 @@ class TaskPolicy
 {
     public function viewAny(User $user, Project $project): bool
     {
-        return $user->role === UserRole::Admin || $project->hasMember($user);
+        return $user->hasPermission('tasks.view', $project);
     }
 
     public function view(User $user, Task $task): bool
     {
-        return $user->role === UserRole::Admin || $task->project->hasMember($user);
+        return $user->hasPermission('tasks.view', $task->project);
     }
 
     public function create(User $user, Project $project): bool
     {
-        if ($user->role === UserRole::Admin) return true;
-        $role = $project->memberRole($user);
-        return in_array($role, [
-            UserRole::ProjectManager,
-            UserRole::BusinessAnalyst,
-            UserRole::Developer,
-            UserRole::Tester,
-        ]);
+        return $user->hasPermission('tasks.create', $project);
     }
 
     public function update(User $user, Task $task): bool
     {
-        return $this->create($user, $task->project);
+        return $user->hasPermission('tasks.edit', $task->project);
     }
 
     public function delete(User $user, Task $task): bool
     {
-        if ($user->role === UserRole::Admin) return true;
-        $role = $task->project->memberRole($user);
-        return $role === UserRole::ProjectManager;
+        return $user->hasPermission('tasks.delete', $task->project);
+    }
+
+    public function changeStatus(User $user, Task $task): bool
+    {
+        return $user->hasPermission('tasks.change_status', $task->project);
     }
 
     public function logHours(User $user, Task $task): bool
     {
-        return $this->create($user, $task->project);
+        return $user->hasPermission('tasks.edit', $task->project);
     }
 }
