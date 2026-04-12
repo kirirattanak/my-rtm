@@ -10,18 +10,29 @@ use App\Models\Project;
 use App\Models\Role;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ProjectController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request): Response|RedirectResponse
     {
         $user = $request->user();
 
+        // Admin has no organisation — projects belong to orgs, not to admin
+        if ($user->isAdmin()) {
+            return redirect()->route('admin.organizations.index');
+        }
+
         $projects = Project::with('owner')
-            ->whereHas('projectMembers', fn ($q) => $q->where('user_id', $user->id))
+            ->where(function ($q) use ($user) {
+                // Every user sees projects they are a member of
+                $q->whereHas('projectMembers', fn ($q) => $q->where('user_id', $user->id));
+                // Org owners also see all projects that belong to their organisation
+                if ($user->isOrgOwner()) {
+                    $q->orWhere('organization_id', $user->organization_id);
+                }
+            })
             ->withCount('projectMembers')
             ->orderBy('name')
             ->paginate(20)

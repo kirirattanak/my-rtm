@@ -83,13 +83,12 @@ class OrganizationSeeder extends Seeder
             'updated_at'      => now(),
         ]);
 
-        // ── Backfill: assign remaining non-admin users + projects to Acme Corp ─
+        // ── Backfill: assign remaining non-admin users to Acme Corp ────────────
         // Admin users have no organization and must remain that way.
+        // Projects are stamped directly in ProjectSeeder (runs after this seeder).
         DB::table('users')
             ->whereNull('organization_id')
             ->where('role_id', '!=', $adminRole?->id)
             ->update(['organization_id' => $acmeId]);
-
-        DB::table('projects')->whereNull('organization_id')->update(['organization_id' => $acmeId]);
     }
 }
