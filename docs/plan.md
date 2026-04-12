@@ -661,10 +661,117 @@ Non-admin users that don't belong to an org (e.g. direct registrations without a
 
 ---
 
+---
+
+## Milestone 13 — Kanban Board View for Tasks
+
+**Goal:** Add a Kanban board view for tasks alongside the existing list view, both on the project Tasks page and on individual Sprint pages. Users can visualise work by status at a glance, filter by priority and category, and move tasks across columns to update their status without leaving the board.
+
+---
+
+### 13.1 — View Toggle
+
+Both the project Tasks page (`/projects/{project}/tasks`) and the Sprint detail page (`/projects/{project}/sprints/{sprint}`) gain a **List / Board** toggle in their page header. The selected view is preserved per page in `localStorage` so it persists across navigation.
+
+---
+
+### 13.2 — Kanban Board Layout
+
+The board renders one column per task status in the application's canonical status order:
+
+`Backlog → Todo → In Progress → In Review → Done → Cancelled`
+
+Each column shows:
+- Status label as the column header with a count badge
+- Scrollable vertical stack of task cards, sorted by priority (Critical → High → Medium → Low)
+- A **+ Add Task** affordance at the bottom of the column that opens a quick-create form inline (title, assignee, priority — same project/sprint/status pre-filled)
+
+The board itself is horizontally scrollable when columns overflow the viewport.
+
+---
+
+### 13.3 — Task Card
+
+Each card displays:
+- Task title
+- Priority badge (colour-coded: Critical = red, High = amber, Medium = blue, Low = slate)
+- Category tag (if set)
+- Assignee avatar / initials chip
+- Due date (red when overdue)
+
+Clicking a card navigates to the task detail page.
+
+---
+
+### 13.4 — Drag-and-Drop Status Update
+
+Tasks can be dragged from one column and dropped into another. On drop:
+- The card moves to the target column optimistically in the UI
+- A `PATCH /projects/{project}/tasks/{task}` request is fired with `{ status: newStatus }`
+- If the request fails, the card snaps back and a toast error is shown
+
+Implementation uses **vue-draggable-next** (wrapper around SortableJS — already a transitive dependency).
+
+Within a column, cards are **not** manually reorderable; priority is the sort key.
+
+---
+
+### 13.5 — Filters
+
+A filter bar above the board (and list) provides:
+- **Priority** — multi-select pills: Critical / High / Medium / Low / All
+- **Category** — dropdown of all categories present in the current task set, plus "All"
+
+Filters apply reactively (client-side) without a page reload. Active filters are reflected in the URL query string so links can be shared. The same filter bar is used in both list and board views for consistency.
+
+---
+
+### 13.6 — Quick-Add Task
+
+Each column's **+ Add Task** button expands an inline form at the bottom of that column:
+- Title (required)
+- Assignee (optional — select from project members)
+- Priority (optional — defaults to Medium)
+- Status is pre-set to the column's status; sprint is pre-set when on the Sprint page
+
+Submitting fires `POST /projects/{project}/tasks` and prepends the new card to the column. The form collapses on success or on Escape.
+
+---
+
+### 13.7 — Backend Changes
+
+No new routes or controllers are required. The existing `TaskController` handles:
+- `index` — already returns all tasks with status, priority, category, assignee; no change needed
+- `store` — already accepts status; pre-filling column status on the frontend is sufficient
+- `update` — already accepts status via `TaskRequest`; drag-and-drop uses this endpoint
+
+The `TaskResource` already includes all fields the card needs (title, status, priority, category, assignee name). No backend changes are anticipated.
+
+---
+
+### 13.8 — Implementation Sequence
+
+1. Install / confirm `vue-draggable-next` is available
+2. Build `TaskKanbanBoard.vue` component (columns, cards, drag-and-drop, quick-add)
+3. Build `TaskFilters.vue` component (priority pills + category dropdown, URL sync)
+4. Update project `Tasks/Index.vue` — add view toggle, wire `TaskKanbanBoard` and `TaskFilters`
+5. Update `Sprints/Show.vue` — add view toggle, wire the same components
+
+---
+
+### Access Rules
+
+- All users with `tasks.view` permission can view the Kanban board
+- Creating tasks from the board respects the existing `tasks.create` permission gate
+- Dragging cards to update status respects the existing `tasks.change_status` permission gate; cards are non-draggable for users without this permission
+
+---
+
 ## Delivery Notes
 
 - v0.1 ships Milestones 1–8 as a fully functional RTM application
 - v0.2 ships Milestones 9–10: configurable permissions and remaining reporting features
 - Milestone 11 extends v0.2 with BR dependency tracking and graph visualisation
 - Milestone 12 extends v0.2 with multi-tenant organisation membership and subscription-based feature gating
+- Milestone 13 extends v0.2 with a Kanban board view for tasks and sprints
 - Auth and roles (Milestone 1) underpin all access rules throughout the application
