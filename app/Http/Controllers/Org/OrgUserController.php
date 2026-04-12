@@ -44,9 +44,8 @@ class OrgUserController extends Controller
                 'is_owner'  => $org->owner_id === $u->id,
             ]);
 
-        $roles = Role::whereNull('organization_id')
-            ->orWhere('organization_id', $org->id)
-            ->where('slug', '!=', 'admin')
+        $roles = Role::where('slug', '!=', 'admin')
+            ->where(fn ($q) => $q->whereNull('organization_id')->orWhere('organization_id', $org->id))
             ->orderBy('name')
             ->get(['id', 'name', 'slug', 'is_system', 'organization_id']);
 

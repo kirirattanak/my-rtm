@@ -30,8 +30,8 @@ class OrgRoleController extends Controller
         $org = $this->orgOrFail($request);
 
         $roles = Role::with('permissions')
-            ->whereNull('organization_id')
-            ->orWhere('organization_id', $org->id)
+            ->where('slug', '!=', 'admin')
+            ->where(fn ($q) => $q->whereNull('organization_id')->orWhere('organization_id', $org->id))
             ->orderByRaw("is_system DESC, name ASC")
             ->get()
             ->map(fn (Role $r) => [
@@ -103,6 +103,7 @@ class OrgRoleController extends Controller
     public function editPermissions(Request $request, Role $role): Response
     {
         $org = $this->orgOrFail($request);
+        abort_if($role->slug === 'admin', 403);
         abort_unless($role->organization_id === $org->id || $role->is_system, 403);
 
         $groups = Permission::orderBy('group')->orderBy('sort_order')->get()
