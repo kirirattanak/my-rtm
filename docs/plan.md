@@ -428,6 +428,183 @@ This produces a diamond shape in the graph with BR-003 in a "Blocked" state, and
 - Users with `br.edit` permission can add and remove dependency links
 - All project members with `br.view` can see the graph and dependency panels
 
+
+---
+
+## Milestone 12 — Organisation Membership & Subscription Tiers
+
+**Goal:** Introduce a multi-tenant organisation layer. Each company or organisation owns its projects and users. Organisations subscribe to one of four functional tiers (Basic → Starter → Standard → Pro), and within each tier they choose a seat plan that caps the number of active users. Feature access is enforced across the entire application based on the active subscription.
+
+---
+
+### 12.1 — Data Model
+
+#### New table: `organizations`
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | bigint PK | |
+| `name` | string | display name |
+| `slug` | string unique | URL-safe identifier |
+| `owner_id` | FK → `users` | the user who administers the org |
+| `is_active` | boolean | soft-disable an org without deleting |
+| `timestamps` | | |
+
+#### New table: `subscription_tier_options`
+
+Seeded, not user-editable. Defines every purchasable plan.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | bigint PK | |
+| `tier` | enum(`basic`,`starter`,`standard`,`pro`) | functional tier |
+| `seats` | unsignedSmallInt | max active users (e.g. 10, 50, 100, 150, 200) |
+| `label` | string | human-readable (e.g. "Starter · 50 seats") |
+| `sort_order` | unsignedSmallInt | for UI ordering |
+
+Seeded options (indicative):
+
+| Tier | Seat options |
+|---|---|
+| Basic | 10, 25 |
+| Starter | 50, 100 |
+| Standard | 50, 100, 150 |
+| Pro | 50, 100, 150, 200 |
+
+#### New table: `organization_subscriptions`
+
+One active row per organisation at any time.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | bigint PK | |
+| `organization_id` | FK → `organizations` | |
+| `tier_option_id` | FK → `subscription_tier_options` | the chosen plan |
+| `status` | enum(`trial`,`active`,`expired`,`cancelled`) | |
+| `trial_ends_at` | timestamp nullable | set on org creation |
+| `starts_at` | timestamp | when this subscription became active |
+| `ends_at` | timestamp nullable | null = open-ended |
+| `timestamps` | | |
+
+#### Schema additions
+
+- `users.organization_id` FK → `organizations` (nullable during migration; required thereafter)
+- `projects.organization_id` FK → `organizations`
+
+---
+
+### 12.2 — Tier Feature Matrix
+
+Each tier unlocks a cumulative set of application features. Enforcement is handled by a `TierGate` service, not by modifying the existing RBAC permission table.
+
+| Feature area | Basic | Starter | Standard | Pro |
+|---|---|---|---|---|
+| Projects (create, edit, archive) | ✅ | ✅ | ✅ | ✅ |
+| Tasks & task management | ✅ | ✅ | ✅ | ✅ |
+| Member management | ✅ | ✅ | ✅ | ✅ |
+| Business Requirements (BR) | ❌ | ✅ | ✅ | ✅ |
+| Technical Requirements (TR) | ❌ | ✅ | ✅ | ✅ |
+| BR Dependency Graph | ❌ | ✅ | ✅ | ✅ |
+| Test Cases (TC) | ❌ | ❌ | ✅ | ✅ |
+| Test Runs & Test Suites | ❌ | ❌ | ✅ | ✅ |
+| Sprints | ❌ | ❌ | ✅ | ✅ |
+| RTM view & export | ❌ | ❌ | ❌ | ✅ |
+| Reports & coverage analytics | ❌ | ❌ | ❌ | ✅ |
+| CSV import / export | ❌ | ❌ | ❌ | ✅ |
+
+---
+
+### 12.3 — TierGate Service
+
+`App\Services\TierGate` — the single source of truth for tier enforcement.
+
+```php
+TierGate::for($organization)->can('br')      // bool
+TierGate::for($organization)->cannot('rtm')  // bool
+TierGate::for($organization)->assertCan('tc') // throws HttpException 403 with upgrade prompt
+```
+
+Feature keys: `br`, `tr`, `tc`, `test_runs`, `test_suites`, `sprints`, `rtm`, `reports`, `imports_exports`.
+
+The gate reads `$organization->activeSubscription->tierOption->tier` and compares it against a static feature map. It bypasses the check entirely for system admins.
+
+A `CheckTierAccess` middleware wraps controller groups, injecting the resolved organization from the authenticated user.
+
+---
+
+### 12.4 — Seat Limit Enforcement
+
+When inviting a new user (or reactivating an existing one), the system checks:
+
+```
+active_users_in_org <= tier_option.seats
+```
+
+If the limit is reached, the invite endpoint returns a validation error: _"Your plan allows up to {n} users. Upgrade your seat plan to invite more."_
+
+Active user count = users in the org where `is_active = true`.
+
+---
+
+### 12.5 — Organisation Management (Admin)
+
+System admins can manage all organisations from `/admin/organizations`:
+
+- List: name, owner, tier, seats used / seats total, status, created date
+- Create: name, slug, owner (user picker), initial tier option
+- Edit: name, owner, active flag
+- View detail: subscription history, member list
+
+Org owners (non-admin) cannot access the admin org panel. They access their own org via the subscription settings page (12.6).
+
+---
+
+### 12.6 — Subscription Settings (Org Owner)
+
+Route: `/settings/subscription` — visible to the org owner only.
+
+- Current plan summary: tier name, seat limit, seats used, status, renewal/expiry date
+- **Change plan** — pick a different tier or seat option from a grid of available plans; POST submits the change (no payment gateway in this milestone — treat as immediate)
+- Tier comparison table showing which features unlock at each tier
+- Locked features shown with a padlock icon and "Upgrade to [tier]" label
+
+---
+
+### 12.7 — UI Enforcement (Feature Lock)
+
+Locked navigation items and action buttons show a padlock icon and are disabled (not hidden), with a tooltip explaining which tier unlocks the feature. This gives lower-tier users visibility into what's available at higher tiers.
+
+Controllers guard at the action level using `TierGate::assertCan()`, returning HTTP 403 with an Inertia shared `tier_locked` flash payload that the frontend renders as an upgrade prompt modal.
+
+---
+
+### 12.8 — Migration Strategy
+
+1. Create `organizations` table and seed one default organisation ("Default Organisation").
+2. Add `organization_id` (nullable) to `users` and `projects`; backfill all existing rows to the default org.
+3. Add NOT NULL constraint in a follow-up migration after backfill.
+4. Seed `subscription_tier_options` with all plan rows.
+5. Seed the default org with a Pro subscription (so no existing dev/test workflow is broken).
+
+---
+
+### 12.9 — Seeder
+
+`OrganizationSeeder`:
+- Creates two orgs: "Acme Corp" (Pro · 100 seats) and "Beta Inc" (Starter · 50 seats)
+- Assigns the seeded admin user to Acme Corp as owner
+- Assigns the E-Commerce Platform project to Acme Corp
+- Seeds the default trial for Beta Inc
+
+---
+
+### Access Rules
+
+- System admin can create/manage all organisations and override subscriptions
+- Org owner can view and change their own subscription plan
+- Feature access is org-wide — all users in an org share the same tier gate
+- Seat limit is enforced at invite/reactivation time, not at login
+
 ---
 
 ## Delivery Notes
@@ -435,4 +612,5 @@ This produces a diamond shape in the graph with BR-003 in a "Blocked" state, and
 - v0.1 ships Milestones 1–8 as a fully functional RTM application
 - v0.2 ships Milestones 9–10: configurable permissions and remaining reporting features
 - Milestone 11 extends v0.2 with BR dependency tracking and graph visualisation
+- Milestone 12 extends v0.2 with multi-tenant organisation membership and subscription-based feature gating
 - Auth and roles (Milestone 1) underpin all access rules throughout the application
