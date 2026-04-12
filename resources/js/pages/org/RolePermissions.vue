@@ -21,17 +21,35 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const form = useForm({ permissions: [...props.assigned] });
 
+const readonly = props.role.is_system;
+
 function toggle(id: number) {
+    if (readonly) return;
     const idx = form.permissions.indexOf(id);
     if (idx === -1) form.permissions.push(id);
     else form.permissions.splice(idx, 1);
 }
 
-function isChecked(id: number) {
-    return form.permissions.includes(id);
+function toggleGroup(group: PermissionGroup) {
+    if (readonly) return;
+    const ids = group.permissions.map(p => p.id);
+    const allOn = ids.every(id => form.permissions.includes(id));
+    if (allOn) {
+        form.permissions = form.permissions.filter(id => !ids.includes(id));
+    } else {
+        ids.forEach(id => { if (!form.permissions.includes(id)) form.permissions.push(id); });
+    }
 }
 
-function submit() {
+function groupAllChecked(group: PermissionGroup) {
+    return group.permissions.every(p => form.permissions.includes(p.id));
+}
+
+function groupPartiallyChecked(group: PermissionGroup) {
+    return group.permissions.some(p => form.permissions.includes(p.id)) && !groupAllChecked(group);
+}
+
+function save() {
     form.put(route('org.roles.permissions.update', props.role.id));
 }
 </script>
@@ -40,40 +58,60 @@ function submit() {
     <Head :title="`${role.name} — Permissions`" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="p-6 max-w-3xl space-y-6">
-            <div>
-                <h1 class="text-xl font-semibold text-slate-900">{{ role.name }}</h1>
-                <p class="text-sm text-slate-500 mt-0.5">Configure which permissions this role grants.</p>
+        <div class="p-6 space-y-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-xl font-semibold text-slate-900">{{ role.name }}</h1>
+                    <p class="text-sm text-slate-500 mt-0.5">
+                        <span v-if="readonly">This is a system role — permissions are read-only and cannot be modified.</span>
+                        <span v-else>Configure what this role can view and do across the application.</span>
+                    </p>
+                </div>
+                <button v-if="!readonly" @click="save" :disabled="form.processing"
+                    class="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 disabled:opacity-50 transition">
+                    Save Changes
+                </button>
             </div>
 
-            <form @submit.prevent="submit" class="space-y-5">
+            <div v-if="readonly" class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+                System roles are managed by the administrator. This matrix is read-only.
+            </div>
+
+            <div class="space-y-4">
                 <div v-for="group in groups" :key="group.group"
-                    class="bg-white border border-slate-200 rounded-xl overflow-hidden">
-                    <div class="px-4 py-3 bg-slate-50 border-b border-slate-100">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ group.group }}</p>
+                    class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                    <!-- Group header -->
+                    <div class="flex items-center gap-3 px-4 py-3 bg-slate-50 border-b border-slate-200">
+                        <input type="checkbox"
+                            :checked="readonly || groupAllChecked(group)"
+                            :indeterminate="!readonly && groupPartiallyChecked(group)"
+                            :disabled="readonly"
+                            @change="toggleGroup(group)"
+                            class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/30 cursor-pointer disabled:cursor-default" />
+                        <span class="text-sm font-semibold text-slate-700">{{ group.group }}</span>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-px bg-slate-100">
+                    <!-- Permissions grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-0 divide-y divide-slate-100 sm:divide-y-0">
                         <label v-for="perm in group.permissions" :key="perm.id"
-                            class="flex items-center gap-3 px-4 py-3 bg-white hover:bg-slate-50 cursor-pointer transition-colors">
-                            <input type="checkbox" :checked="isChecked(perm.id)"
+                            class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 cursor-pointer"
+                            :class="{ 'cursor-default': readonly }">
+                            <input type="checkbox"
+                                :checked="readonly || form.permissions.includes(perm.id)"
+                                :disabled="readonly"
                                 @change="toggle(perm.id)"
-                                class="accent-primary w-4 h-4 rounded" />
-                            <div>
-                                <p class="text-sm text-slate-800">{{ perm.label }}</p>
-                                <p class="text-[10px] font-mono text-slate-400">{{ perm.key }}</p>
-                            </div>
+                                class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/30 cursor-pointer disabled:cursor-default" />
+                            <span class="text-sm text-slate-700">{{ perm.label }}</span>
                         </label>
                     </div>
                 </div>
+            </div>
 
-                <div class="flex items-center gap-4">
-                    <button type="submit" :disabled="form.processing"
-                        class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50">
-                        Save Permissions
-                    </button>
-                    <p v-if="form.recentlySuccessful" class="text-sm text-emerald-600">Saved.</p>
-                </div>
-            </form>
+            <div v-if="!readonly" class="flex justify-end">
+                <button @click="save" :disabled="form.processing"
+                    class="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 disabled:opacity-50 transition">
+                    Save Changes
+                </button>
+            </div>
         </div>
     </AppLayout>
 </template>
