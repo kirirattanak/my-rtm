@@ -139,18 +139,11 @@ class SprintController extends Controller
                 'committed'    => $committedIds->contains($br->id),
             ]);
 
-        // Member capacity for the sprint's months
+        // All capacity records for the project (date filtering for prorating is handled in availableHours())
         $capacityRecords = MemberMonthlyCapacity::where('project_id', $project->id)
-            ->where(function ($q) use ($sprint) {
-                $cursor = $sprint->start_date->copy()->startOfMonth();
-                while ($cursor->lte($sprint->end_date)) {
-                    $q->orWhere(fn ($inner) => $inner
-                        ->where('year', $cursor->year)
-                        ->where('month', $cursor->month));
-                    $cursor->addMonth();
-                }
-            })
             ->with('user:id,name')
+            ->orderBy('year')
+            ->orderBy('month')
             ->get()
             ->map(fn ($r) => [
                 'user_id'         => $r->user_id,

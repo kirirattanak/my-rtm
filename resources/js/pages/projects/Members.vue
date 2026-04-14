@@ -113,7 +113,7 @@ function markDirty(row: CapacityRow) {
 
 async function saveCapacity() {
     capacitySaving.value = true;
-    await fetch(route('projects.members.capacity.upsert', props.project.id), {
+    const res = await fetch(route('projects.members.capacity.upsert', props.project.id), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': (document.querySelector('meta[name=csrf-token]') as HTMLMetaElement)?.content ?? '', Accept: 'application/json' },
         body: JSON.stringify({
@@ -128,7 +128,11 @@ async function saveCapacity() {
         }),
     });
     capacitySaving.value = false;
-    capacityRows.value.forEach(r => r.dirty = false);
+    if (res.ok) {
+        capacityRows.value.forEach(r => r.dirty = false);
+    } else {
+        alert(`Failed to save capacity (HTTP ${res.status}). Please try again.`);
+    }
 }
 
 async function copyPreviousMonth() {
