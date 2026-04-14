@@ -160,6 +160,8 @@ export interface BrListItem {
     blocking_count: number;
     is_blocked: boolean;
     created_at: string;
+    pert_expected: number | null;
+    has_pert: boolean;
 }
 
 export interface TrListItem {
@@ -194,6 +196,10 @@ export interface BusinessRequirement extends BrListItem {
         type_label: string;
     }[];
     comments: Comment[];
+    optimistic_hours: number | null;
+    most_likely_hours: number | null;
+    pessimistic_hours: number | null;
+    pert_std_dev: number | null;
 }
 
 export interface TechnicalRequirement extends TrListItem {

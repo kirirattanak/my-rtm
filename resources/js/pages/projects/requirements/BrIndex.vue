@@ -57,8 +57,9 @@ function setView(v: 'list' | 'board') {
 
 // ── Board filters (client-side) ───────────────────────────────────────────────
 
-const filterPriorities = ref<string[]>([]);
-const filterCategory   = ref('');
+const filterPriorities  = ref<string[]>([]);
+const filterCategory    = ref('');
+const filterUnestimated = ref(false);
 
 const availableCategories = computed(() => {
     const seen = new Map<string, string>();
@@ -163,6 +164,14 @@ const statusClass: Record<string, string> = {
                     </div>
                 </div>
 
+                <!-- Unestimated filter -->
+                <div class="flex items-center gap-2">
+                    <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
+                        <input type="checkbox" v-model="filterUnestimated" class="rounded border-slate-300 text-primary focus:ring-primary/40" />
+                        Show unestimated only
+                    </label>
+                </div>
+
                 <!-- Empty state -->
                 <div v-if="!brs || brs.data.length === 0" class="text-center py-16 text-slate-400">
                     <p class="text-lg font-medium">No business requirements yet</p>
@@ -179,13 +188,14 @@ const statusClass: Record<string, string> = {
                                 <th class="px-4 py-3 text-left font-medium text-slate-500">Priority</th>
                                 <th class="px-4 py-3 text-left font-medium text-slate-500">Status</th>
                                 <th class="px-4 py-3 text-left font-medium text-slate-500">Category</th>
+                                <th class="px-4 py-3 text-left font-medium text-slate-500">Estimate</th>
                                 <th class="px-4 py-3 text-left font-medium text-slate-500">TRs</th>
                                 <th class="px-4 py-3 text-left font-medium text-slate-500">Blockers</th>
                                 <th class="px-4 py-3 text-left font-medium text-slate-500">Created by</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            <tr v-for="br in brs.data" :key="br.id"
+                            <tr v-for="br in brs.data.filter(b => !filterUnestimated || !b.has_pert)" :key="br.id"
                                 class="hover:bg-slate-50 transition cursor-pointer"
                                 @click="router.visit(route('projects.requirements.business.show', { project: project.id, businessRequirement: br.id }))">
                                 <td class="px-4 py-3 font-mono text-xs text-slate-500">{{ br.ref }}</td>
@@ -206,6 +216,15 @@ const statusClass: Record<string, string> = {
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 text-slate-500">{{ br.category ?? '—' }}</td>
+                                <td class="px-4 py-3">
+                                    <span v-if="br.has_pert" class="text-sm text-slate-700 font-medium">
+                                        {{ Number(br.pert_expected).toFixed(1) }} h
+                                    </span>
+                                    <span v-else class="inline-flex items-center gap-1 text-xs text-amber-600">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        —
+                                    </span>
+                                </td>
                                 <td class="px-4 py-3 text-slate-500">{{ br.tr_count }}</td>
                                 <td class="px-4 py-3 text-slate-500">
                                     <span v-if="br.blocking_count > 0" class="text-amber-600 font-medium">{{ br.blocking_count }}</span>

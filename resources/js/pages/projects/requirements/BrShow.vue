@@ -141,6 +141,38 @@ function removeDependant(dependantBrId: number) {
                 </div>
             </div>
 
+            <!-- PERT Estimate panel -->
+            <div class="bg-white rounded-xl border border-slate-200 p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-sm font-semibold text-slate-700">Effort Estimate (PERT)</h2>
+                    <Link v-if="can.edit" :href="route('projects.requirements.business.edit', [project.id, br.id])"
+                        class="text-xs text-slate-400 hover:text-primary transition">Edit →</Link>
+                </div>
+                <div v-if="br.has_pert" class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div class="text-center">
+                        <p class="text-xs text-slate-400 mb-1">Optimistic</p>
+                        <p class="text-lg font-semibold text-slate-700">{{ Number(br.optimistic_hours).toFixed(1) }} h</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xs text-slate-400 mb-1">Most Likely</p>
+                        <p class="text-lg font-semibold text-slate-700">{{ Number(br.most_likely_hours).toFixed(1) }} h</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xs text-slate-400 mb-1">Pessimistic</p>
+                        <p class="text-lg font-semibold text-slate-700">{{ Number(br.pessimistic_hours).toFixed(1) }} h</p>
+                    </div>
+                    <div class="text-center border-l border-slate-100 pl-4">
+                        <p class="text-xs text-slate-400 mb-1">Expected (PERT)</p>
+                        <p class="text-lg font-semibold text-primary">{{ Number(br.pert_expected).toFixed(1) }} h</p>
+                        <p class="text-xs text-slate-400">±{{ Number(br.pert_std_dev).toFixed(1) }} h σ</p>
+                    </div>
+                </div>
+                <div v-else class="flex items-center gap-2 text-sm text-amber-600">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    No PERT estimate yet. Add optimistic, most likely, and pessimistic hours to enable sprint capacity planning.
+                </div>
+            </div>
+
             <!-- Description -->
             <div v-if="br.description" class="bg-white rounded-xl border border-slate-200 p-5">
                 <h2 class="text-sm font-medium text-slate-500 mb-2">Description</h2>

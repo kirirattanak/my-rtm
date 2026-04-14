@@ -36,10 +36,11 @@ class ProjectMemberController extends Controller
             ->get(['id', 'name', 'email']);
 
         return Inertia::render('projects/Members', [
-            'project'       => ['id' => $project->id, 'name' => $project->name],
-            'members'       => $members,
-            'addable_users' => $addableUsers,
-            'roles'         => Role::orderBy('name')->get(['id', 'name']),
+            'project'              => ['id' => $project->id, 'name' => $project->name],
+            'members'              => $members,
+            'addable_users'        => $addableUsers,
+            'roles'                => Role::orderBy('name')->get(['id', 'name']),
+            'can_manage_capacity'  => $request->user()->hasPermission('capacity.manage', $project),
         ]);
     }
 

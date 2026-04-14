@@ -31,11 +31,13 @@ class TierGate
             'projects', 'tasks', 'members',
             'br', 'tr',
             'tc', 'test_runs', 'test_suites', 'sprints',
+            'capacity_planning',
         ],
         'pro' => [
             'projects', 'tasks', 'members',
             'br', 'tr',
             'tc', 'test_runs', 'test_suites', 'sprints',
+            'capacity_planning',
             'rtm', 'reports', 'imports_exports',
         ],
     ];
@@ -50,8 +52,9 @@ class TierGate
         'tc'             => 'standard',
         'test_runs'      => 'standard',
         'test_suites'    => 'standard',
-        'sprints'        => 'standard',
-        'rtm'            => 'pro',
+        'sprints'           => 'standard',
+        'capacity_planning' => 'standard',
+        'rtm'               => 'pro',
         'reports'        => 'pro',
         'imports_exports' => 'pro',
     ];
