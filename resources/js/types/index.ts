@@ -72,6 +72,7 @@ export interface Invitation {
     id: number;
     email: string;
     role: string;
+    organization: string | null;
     invited_by: string;
     status: 'pending' | 'accepted' | 'expired';
     expires_at: string;

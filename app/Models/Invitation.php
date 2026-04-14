@@ -30,6 +30,11 @@ class Invitation extends Model
         return $this->belongsTo(User::class, 'invited_by');
     }
 
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
     public function isPending(): bool
     {
         return is_null($this->accepted_at) && $this->expires_at->isFuture();
