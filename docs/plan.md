@@ -767,6 +767,247 @@ The `TaskResource` already includes all fields the card needs (title, status, pr
 
 ---
 
+---
+
+## Milestone 14 — PERT-Based Capacity Planning
+
+**Goal:** Enable pre-sprint capacity planning grounded in PERT estimation. Business Requirements are estimated with three-point (optimistic / most-likely / pessimistic) hour estimates before sprint planning begins. When a sprint is planned, the team selects which BRs to commit to; the sprint's required capacity is derived from those BRs' PERT expected values. Team available capacity is tracked per member per month and prorated to the sprint window. The result is a clear, quantified answer to: *"Do we have enough hours to deliver these BRs with acceptable confidence?"*
+
+---
+
+### 14.1 — Data Model
+
+#### PERT fields on `business_requirements`
+
+Three nullable columns added to the existing table:
+
+| Column | Type | Notes |
+|---|---|---|
+| `optimistic_hours` | decimal(8,2) nullable | Best-case effort in hours |
+| `most_likely_hours` | decimal(8,2) nullable | Most realistic effort in hours |
+| `pessimistic_hours` | decimal(8,2) nullable | Worst-case effort in hours |
+
+All three share a single unit: **hours**. Story points are out of scope.
+
+Validation rule: when any PERT field is provided, all three must be present, and `optimistic_hours` ≤ `most_likely_hours` ≤ `pessimistic_hours`.
+
+---
+
+#### New table: `sprint_business_requirements`
+
+Tracks which BRs are committed to a sprint. This is the planning contract — selected BRs drive the sprint's required capacity.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | bigint PK | |
+| `sprint_id` | FK → `sprints` | |
+| `business_requirement_id` | FK → `business_requirements` | |
+| `added_by` | FK → `users` | who added the BR to the sprint |
+| `timestamps` | | |
+
+Constraint: `UNIQUE (sprint_id, business_requirement_id)`.
+
+---
+
+#### New table: `member_monthly_capacity`
+
+Tracks how many hours each project member is available to contribute to a given project in a given month.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | bigint PK | |
+| `user_id` | FK → `users` | |
+| `project_id` | FK → `projects` | capacity is project-scoped |
+| `year` | smallint unsigned | |
+| `month` | tinyint unsigned | 1–12 |
+| `available_hours` | decimal(8,2) | raw working hours this month for this project |
+| `focus_factor` | decimal(3,2) | default 0.80 — multiplier for meetings/overhead/context switching |
+| `notes` | string nullable | e.g. "3 days PTO", "half on another project" |
+| `timestamps` | | |
+
+Constraint: `UNIQUE (user_id, project_id, year, month)`.
+
+`effective_hours = available_hours × focus_factor` — computed on read, not stored.
+
+Sprint available capacity is derived on the fly: for each project member, find their monthly capacity rows that overlap the sprint's date range, prorate by the fraction of sprint days falling in each month, and sum across all members. No per-sprint assignment is required because the project team is stable across sprints.
+
+---
+
+#### New table: `sprint_velocities`
+
+One row per sprint, written automatically when a sprint closes (end date passes or sprint is manually closed). Provides the historical data for velocity charts and PERT accuracy retrospectives.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | bigint PK | |
+| `sprint_id` | FK → `sprints` unique | |
+| `pert_expected_hours` | decimal(8,2) | Σ PERT expected hours for all sprint BRs at close time |
+| `pert_std_dev` | decimal(8,2) | √(Σ PERT variance) for sprint BRs |
+| `available_hours` | decimal(8,2) | team effective hours for the sprint window |
+| `actual_hours_logged` | decimal(8,2) | Σ task log hours for the sprint |
+| `br_count_committed` | unsignedSmallInt | BRs selected into the sprint |
+| `br_count_completed` | unsignedSmallInt | BRs whose tasks reached Done by sprint close |
+| `timestamps` | | |
+
+---
+
+### 14.2 — PERT Calculation Logic
+
+All calculations are encapsulated in model methods, not scattered across controllers.
+
+**On `BusinessRequirement`:**
+
+```
+pertExpected()   = (optimistic + 4 × most_likely + pessimistic) / 6
+pertVariance()   = ((pessimistic − optimistic) / 6) ^ 2
+pertStdDev()     = √ pertVariance()
+hasPertEstimate(): bool  — true when all three fields are non-null
+```
+
+If a BR lacks PERT data, `pertExpected()` returns `null` and the sprint summary flags it as unestimated.
+
+**On `Sprint`:**
+
+```
+pertExpectedTotal()   = Σ br.pertExpected()    for all committed BRs
+pertVarianceTotal()   = Σ br.pertVariance()    for all committed BRs
+pertStdDev()          = √ pertVarianceTotal()
+confidenceRange(n)    = [pertExpectedTotal − n × pertStdDev, pertExpectedTotal + n × pertStdDev]
+availableHours()      = derived from member_monthly_capacity × sprint date overlap
+capacityBuffer()      = availableHours() − pertExpectedTotal()  (positive = slack, negative = over-committed)
+unestimatedBrs()      = committed BRs missing PERT data
+```
+
+---
+
+### 14.3 — BR Changes
+
+**Create / Edit form (`BrCreate.vue`, `BrEdit.vue`):**
+- New collapsible section: **"Effort Estimate (PERT)"**
+- Three numeric inputs: Optimistic hours / Most Likely hours / Pessimistic hours
+- Live preview of the computed expected value as the user types: `Expected: 12.3 h`
+- Fields are optional — a BR can be saved without estimates and filled in later
+- Validation error shown inline if the ordering constraint is violated (O ≤ M ≤ P)
+
+**BR detail page (`BrShow.vue`):**
+- New **"Estimate"** row in the metadata panel:
+  - Shows `O / M / P` values and the computed expected + std dev
+  - If no estimate: "Not yet estimated" with a warning indicator
+  - Edit pencil links to the edit form
+
+**BR list page (`BrIndex.vue`):**
+- New **"Estimate"** column: shows expected hours if set, or a `—` with amber icon if unestimated
+- Filter toggle: "Show unestimated only" to quickly identify BRs that still need PERT data before sprint planning
+
+---
+
+### 14.4 — Sprint Planning: BR Selection
+
+**Sprint show page — new "Planning" tab** (alongside the existing Workload and Burndown tabs):
+
+**BR Selection panel:**
+- Searchable list of all project BRs not yet assigned to another active sprint
+- Each row: ref, title, priority badge, status badge, PERT expected hours (or "Unestimated" warning)
+- Checkbox to add/remove from sprint commitment
+- Inline warning if a BR is blocked (has unresolved blockers from Milestone 11)
+
+**Sprint Commitment summary** (updates live as BRs are checked):
+```
+Committed BRs:        8
+Required capacity:    42.3 h  (PERT expected)
+Std deviation:        ±6.1 h
+
+Confidence ranges:
+  68%  →  36.2 – 48.4 h
+  95%  →  30.1 – 54.5 h
+  99%  →  24.0 – 60.6 h
+
+Team available:       48.0 h
+Buffer:               +5.7 h  ✓
+```
+
+Buffer shown in green when positive, red when negative. Unestimated BRs count toward the total but with a `?` and a warning banner prompting estimates to be filled in.
+
+---
+
+### 14.5 — Member Monthly Capacity Management
+
+**Location:** Project Members page (`/projects/{project}/members`) gains a **"Capacity"** tab.
+
+- Table: member name | month selector | available hours | focus factor | effective hours | notes
+- Month selector defaults to the current month; navigable forward/backward
+- Each row is editable inline; changes saved on blur
+- New rows added for members not yet having a record for the selected month (defaults: 160h available, 0.80 focus factor)
+- Bulk action: "Copy previous month" to pre-fill the next month for all members
+
+**Routes:**
+- `GET  /projects/{project}/members/capacity` — index (returns member × month data for the selected month)
+- `PUT  /projects/{project}/members/capacity` — bulk upsert for the selected month
+
+**Controller:** `MemberCapacityController` — thin; delegates to `MemberMonthlyCapacity` model.
+
+---
+
+### 14.6 — Historical Velocity
+
+**Trigger:** An Artisan command `sprints:close {sprint}` records the velocity snapshot. Called:
+- Automatically via the scheduler, daily, for sprints whose `end_date` has passed and no velocity row exists yet
+- Manually by a PM from the sprint page ("Close Sprint" button, which also sets sprint status to closed)
+
+**Project Report page** gains a new **"Velocity"** section:
+- Bar chart: last N sprints — available hours vs PERT expected vs actual hours logged
+- Line overlay: capacity buffer trend (positive/negative)
+- PERT accuracy table: per sprint, how close was the PERT expected to actual hours logged (% error)
+
+---
+
+### 14.7 — New Permission Keys
+
+| Key | Description |
+|---|---|
+| `capacity.view` | View PERT estimates on BRs, sprint planning tab, and velocity charts |
+| `capacity.manage` | Edit PERT estimates on BRs, manage member monthly capacity, close sprints |
+
+Default assignments:
+
+| Permission | PM | BA | Developer | Tester | Viewer |
+|---|---|---|---|---|---|
+| `capacity.view` | ✅ | ✅ | ✅ | ✅ | ❌ |
+| `capacity.manage` | ✅ | ✅ | ❌ | ❌ | ❌ |
+
+---
+
+### 14.8 — Tier Gate
+
+PERT capacity planning requires **Standard** tier or above (same gate as Sprints). The `TierGate` feature key is `capacity_planning`. Attempting to access PERT estimate fields or the sprint planning tab on a lower tier returns the standard upgrade prompt.
+
+---
+
+### 14.9 — Implementation Sequence
+
+1. **Migration** — add `optimistic_hours`, `most_likely_hours`, `pessimistic_hours` to `business_requirements`; create `sprint_business_requirements`, `member_monthly_capacity`, `sprint_velocities` tables
+2. **Model methods** — PERT helpers on `BusinessRequirement`; aggregate helpers on `Sprint`; `MemberMonthlyCapacity` model with `effectiveHours()` accessor
+3. **FormRequest validation** — PERT ordering rule (`O ≤ M ≤ P`) added to `BusinessRequirementRequest`
+4. **BR form updates** — PERT input section in `BrCreate.vue` and `BrEdit.vue` with live expected preview
+5. **BR list + detail** — estimate column in `BrIndex.vue`; estimate panel row in `BrShow.vue`; "unestimated" filter
+6. **Sprint BR selection** — `SprintBusinessRequirementController` (add/remove BR to sprint); Planning tab in `Sprints/Show.vue` with commitment summary
+7. **Member monthly capacity** — `MemberCapacityController` + Capacity tab on Members page
+8. **Sprint capacity derivation** — `Sprint::availableHours()` using prorated monthly capacity; display in planning tab
+9. **`sprints:close` command** — writes `sprint_velocities` row; scheduler registration
+10. **Velocity chart** — new section on Project Report page
+11. **Permission keys** — seed `capacity.view` and `capacity.manage`; update default role matrix; add tier gate check
+
+---
+
+### Access Rules
+
+- Users with `capacity.view` can see PERT estimates, the sprint planning tab, and the velocity chart
+- Users with `capacity.manage` can edit PERT estimates on BRs, manage member monthly capacity, and close sprints
+- Org owners bypass these checks within their org's projects (consistent with Milestone 12 behaviour)
+- Feature requires Standard tier or above
+
+---
+
 ## Delivery Notes
 
 - v0.1 ships Milestones 1–8 as a fully functional RTM application
@@ -774,4 +1015,5 @@ The `TaskResource` already includes all fields the card needs (title, status, pr
 - Milestone 11 extends v0.2 with BR dependency tracking and graph visualisation
 - Milestone 12 in v0.3 with multi-tenant organisation membership and subscription-based feature gating
 - Milestone 13 extends v0.3 with a Kanban board view for tasks and sprints
+- Milestone 14 extends v0.3 with PERT-based capacity planning tied to BR commitments per sprint
 - Auth and roles (Milestone 1) underpin all access rules throughout the application
