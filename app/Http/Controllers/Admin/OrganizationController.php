@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\OrganizationStoreRequest;
+use App\Http\Requests\Admin\OrganizationSubscriptionRequest;
+use App\Http\Requests\Admin\OrganizationUpdateRequest;
 use App\Models\Organization;
 use App\Models\Role;
 use App\Models\SubscriptionTierOption;
@@ -50,18 +53,9 @@ class OrganizationController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(OrganizationStoreRequest $request): RedirectResponse
     {
-        $data = $request->validate([
-            'name'              => 'required|string|max:255',
-            'slug'              => 'required|string|max:255|unique:organizations,slug|regex:/^[a-z0-9\-]+$/',
-            'tier_option_id'    => 'required|exists:subscription_tier_options,id',
-            'is_active'         => 'boolean',
-            // Owner: provide either an existing user id OR name+email for a new account
-            'owner_id'          => 'nullable|exists:users,id',
-            'owner_name'        => 'required_without:owner_id|string|max:255',
-            'owner_email'       => 'required_without:owner_id|email|unique:users,email',
-        ]);
+        $data = $request->validated();
 
         // Create the org first (owner set after so the user can reference org_id)
         $org = Organization::create([
@@ -144,25 +138,18 @@ class OrganizationController extends Controller
         ]);
     }
 
-    public function update(Request $request, Organization $organization): RedirectResponse
+    public function update(OrganizationUpdateRequest $request, Organization $organization): RedirectResponse
     {
-        $data = $request->validate([
-            'name'      => 'required|string|max:255',
-            'owner_id'  => 'nullable|exists:users,id',
-            'is_active' => 'boolean',
-        ]);
+        $data = $request->validated();
 
         $organization->update($data);
 
         return back()->with('success', 'Organisation updated.');
     }
 
-    public function updateSubscription(Request $request, Organization $organization): RedirectResponse
+    public function updateSubscription(OrganizationSubscriptionRequest $request, Organization $organization): RedirectResponse
     {
-        $data = $request->validate([
-            'tier_option_id' => 'required|exists:subscription_tier_options,id',
-            'status'         => 'required|in:trial,active,expired,cancelled',
-        ]);
+        $data = $request->validated();
 
         // Close current subscription and open a new one
         $organization->subscriptions()

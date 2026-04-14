@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\InvitationStoreRequest;
 use App\Models\Invitation;
 use App\Models\Organization;
 use App\Models\Role;
@@ -48,22 +49,12 @@ class InvitationController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(InvitationStoreRequest $request): RedirectResponse
     {
         $this->authorize('invite', User::class);
 
         $user = $request->user();
-
-        $rules = [
-            'email' => ['required', 'email', 'unique:users,email', 'unique:invitations,email'],
-            'role'  => ['required', 'string', 'exists:roles,slug'],
-        ];
-
-        if ($user->isAdmin()) {
-            $rules['organization_id'] = ['nullable', 'exists:organizations,id'];
-        }
-
-        $data = $request->validate($rules);
+        $data = $request->validated();
 
         $organizationId = $user->isAdmin()
             ? ($data['organization_id'] ?? null)

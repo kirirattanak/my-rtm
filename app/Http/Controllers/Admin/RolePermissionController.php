@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\RolePermissionRequest;
 use App\Models\Permission;
 use App\Models\Role;
 use Illuminate\Http\RedirectResponse;
@@ -44,7 +45,7 @@ class RolePermissionController extends Controller
         ]);
     }
 
-    public function update(Request $request, Role $role): RedirectResponse
+    public function update(RolePermissionRequest $request, Role $role): RedirectResponse
     {
         $this->authorize('viewAny', \App\Models\User::class);
 
@@ -52,10 +53,7 @@ class RolePermissionController extends Controller
             return back()->with('error', 'Admin permissions cannot be modified.');
         }
 
-        $data = $request->validate([
-            'permissions'   => ['present', 'array'],
-            'permissions.*' => ['integer', 'exists:permissions,id'],
-        ]);
+        $data = $request->validated();
 
         $role->permissions()->sync($data['permissions']);
 

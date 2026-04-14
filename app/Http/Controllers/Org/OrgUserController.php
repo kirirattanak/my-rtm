@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Org;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Org\OrgInviteRequest;
+use App\Http\Requests\Org\OrgUserRoleRequest;
 use App\Models\Invitation;
 use App\Models\Organization;
 use App\Models\Role;
@@ -61,7 +63,7 @@ class OrgUserController extends Controller
         ]);
     }
 
-    public function invite(Request $request): RedirectResponse
+    public function invite(OrgInviteRequest $request): RedirectResponse
     {
         $org = $this->orgOrFail($request);
         $org->load('activeSubscription.tierOption');
@@ -71,10 +73,7 @@ class OrgUserController extends Controller
             return back()->withErrors(['email' => "Your plan allows up to {$seats} users. Upgrade your seat plan to invite more."]);
         }
 
-        $data = $request->validate([
-            'email'   => 'required|email',
-            'role_id' => 'required|exists:roles,id',
-        ]);
+        $data = $request->validated();
 
         Invitation::updateOrCreate(
             ['email' => $data['email'], 'organization_id' => $org->id],
@@ -100,13 +99,13 @@ class OrgUserController extends Controller
         return back()->with('success', 'Invitation revoked.');
     }
 
-    public function updateRole(Request $request, User $user): RedirectResponse
+    public function updateRole(OrgUserRoleRequest $request, User $user): RedirectResponse
     {
         $org = $this->orgOrFail($request);
         abort_unless($user->organization_id === $org->id, 403);
         abort_if($org->owner_id === $user->id, 403, 'Cannot change the org owner\'s role.');
 
-        $data = $request->validate(['role_id' => 'required|exists:roles,id']);
+        $data = $request->validated();
 
         $role = Role::findOrFail($data['role_id']);
         abort_if($role->isAdmin(), 403, 'Cannot assign the system admin role.');

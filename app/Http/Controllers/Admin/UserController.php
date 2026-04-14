@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UserRoleRequest;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -38,13 +39,11 @@ class UserController extends Controller
         ]);
     }
 
-    public function updateRole(Request $request, User $user): RedirectResponse
+    public function updateRole(UserRoleRequest $request, User $user): RedirectResponse
     {
         $this->authorize('updateRole', User::class);
 
-        $data = $request->validate([
-            'role_id' => ['required', 'integer', 'exists:roles,id'],
-        ]);
+        $data = $request->validated();
 
         $user->update(['role_id' => $data['role_id']]);
 

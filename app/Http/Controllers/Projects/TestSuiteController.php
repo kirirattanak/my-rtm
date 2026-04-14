@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Projects;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Projects\TestSuiteRequest;
 use App\Models\Project;
 use App\Models\TestSuite;
 use Illuminate\Http\RedirectResponse;
@@ -58,30 +59,20 @@ class TestSuiteController extends Controller
         ]);
     }
 
-    public function store(Request $request, Project $project): RedirectResponse
+    public function store(TestSuiteRequest $request, Project $project): RedirectResponse
     {
         $this->authorize('create', [TestSuite::class, $project]);
 
-        $data = $request->validate([
-            'name'        => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'br_ids'      => 'required|array|min:1',
-            'br_ids.*'    => 'integer|exists:business_requirements,id',
-        ]);
+        $data = $request->validated();
 
-        // Ensure all selected BRs belong to this project
-        $validBrIds = $project->businessRequirements()
-            ->whereIn('id', $data['br_ids'])
-            ->pluck('id')
-            ->toArray();
-
+        // br_ids already scoped to the project via the FormRequest Rule::exists
         $suite = $project->testSuites()->create([
             'name'        => $data['name'],
             'description' => $data['description'] ?? null,
             'created_by'  => $request->user()->id,
         ]);
 
-        $suite->businessRequirements()->sync($validBrIds);
+        $suite->businessRequirements()->sync($data['br_ids']);
 
         return redirect()
             ->route('projects.test-suites.show', [$project, $suite])

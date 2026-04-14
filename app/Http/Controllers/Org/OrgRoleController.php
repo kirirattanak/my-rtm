@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Org;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Org\OrgRolePermissionRequest;
+use App\Http\Requests\Org\OrgRoleRequest;
 use App\Models\Organization;
 use App\Models\Permission;
 use App\Models\Role;
@@ -49,13 +51,11 @@ class OrgRoleController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(OrgRoleRequest $request): RedirectResponse
     {
         $org = $this->orgOrFail($request);
 
-        $data = $request->validate([
-            'name' => 'required|string|max:100',
-        ]);
+        $data = $request->validated();
 
         Role::create([
             'name'            => $data['name'],
@@ -68,12 +68,12 @@ class OrgRoleController extends Controller
         return back()->with('success', 'Custom role created.');
     }
 
-    public function update(Request $request, Role $role): RedirectResponse
+    public function update(OrgRoleRequest $request, Role $role): RedirectResponse
     {
         $org = $this->orgOrFail($request);
         abort_unless($role->organization_id === $org->id, 403);
 
-        $data = $request->validate(['name' => 'required|string|max:100']);
+        $data = $request->validated();
 
         $role->update([
             'name' => $data['name'],
@@ -121,12 +121,12 @@ class OrgRoleController extends Controller
         ]);
     }
 
-    public function updatePermissions(Request $request, Role $role): RedirectResponse
+    public function updatePermissions(OrgRolePermissionRequest $request, Role $role): RedirectResponse
     {
         $org = $this->orgOrFail($request);
         abort_unless($role->organization_id === $org->id, 403);
 
-        $data = $request->validate(['permissions' => 'array', 'permissions.*' => 'exists:permissions,id']);
+        $data = $request->validated();
 
         $role->permissions()->sync($data['permissions'] ?? []);
         Cache::forget("role.{$role->id}.permissions");
