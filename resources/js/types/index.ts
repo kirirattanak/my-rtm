@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-vue-next';
 export interface Auth {
     user: User;
     is_admin: boolean;
+    is_org_owner: boolean;
 }
 
 export interface BreadcrumbItem {
@@ -17,10 +18,31 @@ export interface NavItem {
     isActive?: boolean;
 }
 
+export type SubscriptionTier = 'basic' | 'starter' | 'standard' | 'pro';
+
+export interface TierInfo {
+    name: SubscriptionTier | null;
+    label: string | null;
+    seats: number | null;
+    seats_used: number;
+    features: {
+        br: boolean;
+        tr: boolean;
+        tc: boolean;
+        test_runs: boolean;
+        test_suites: boolean;
+        sprints: boolean;
+        rtm: boolean;
+        reports: boolean;
+        imports_exports: boolean;
+    };
+}
+
 export interface SharedData {
     name: string;
     quote: { message: string; author: string };
     auth: Auth;
+    tier: TierInfo | null;
     currentProject: { id: number; name: string } | null;
     flash: { success: string | null; error: string | null };
     unreadNotificationsCount: number;
@@ -50,6 +72,7 @@ export interface Invitation {
     id: number;
     email: string;
     role: string;
+    organization: string | null;
     invited_by: string;
     status: 'pending' | 'accepted' | 'expired';
     expires_at: string;
@@ -137,6 +160,8 @@ export interface BrListItem {
     blocking_count: number;
     is_blocked: boolean;
     created_at: string;
+    pert_expected: number | null;
+    has_pert: boolean;
 }
 
 export interface TrListItem {
@@ -171,6 +196,10 @@ export interface BusinessRequirement extends BrListItem {
         type_label: string;
     }[];
     comments: Comment[];
+    optimistic_hours: number | null;
+    most_likely_hours: number | null;
+    pessimistic_hours: number | null;
+    pert_std_dev: number | null;
 }
 
 export interface TechnicalRequirement extends TrListItem {

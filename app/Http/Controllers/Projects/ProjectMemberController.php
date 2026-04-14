@@ -30,15 +30,17 @@ class ProjectMemberController extends Controller
         ]);
 
         $addableUsers = User::where('is_active', true)
+            ->when($project->organization_id, fn ($q) => $q->where('organization_id', $project->organization_id))
             ->whereNotIn('id', $project->projectMembers()->pluck('user_id'))
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
 
         return Inertia::render('projects/Members', [
-            'project'       => ['id' => $project->id, 'name' => $project->name],
-            'members'       => $members,
-            'addable_users' => $addableUsers,
-            'roles'         => Role::orderBy('name')->get(['id', 'name']),
+            'project'              => ['id' => $project->id, 'name' => $project->name],
+            'members'              => $members,
+            'addable_users'        => $addableUsers,
+            'roles'                => Role::orderBy('name')->get(['id', 'name']),
+            'can_manage_capacity'  => $request->user()->hasPermission('capacity.manage', $project),
         ]);
     }
 

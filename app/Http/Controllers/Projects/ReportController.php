@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Projects;
 
 use App\Http\Controllers\Controller;
 use App\Models\Project;
+use App\Models\SprintVelocity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -68,9 +69,31 @@ class ReportController extends Controller
 
         $brCoverage = $brTotal > 0 ? round($coveredBrs / $brTotal * 100) : 0;
 
+        // Velocity history (last 10 closed sprints)
+        $velocityHistory = SprintVelocity::whereHas('sprint', fn ($q) => $q->where('project_id', $project->id))
+            ->with('sprint:id,name,start_date,end_date')
+            ->latest()
+            ->limit(10)
+            ->get()
+            ->reverse()
+            ->map(fn ($v) => [
+                'sprint_name'        => $v->sprint->name,
+                'pert_expected'      => (float) $v->pert_expected_hours,
+                'pert_std_dev'       => (float) $v->pert_std_dev,
+                'available_hours'    => (float) $v->available_hours,
+                'actual_hours'       => (float) $v->actual_hours_logged,
+                'br_committed'       => $v->br_count_committed,
+                'br_completed'       => $v->br_count_completed,
+                'pert_accuracy_pct'  => $v->pert_expected_hours > 0
+                    ? round(abs($v->actual_hours_logged - $v->pert_expected_hours) / $v->pert_expected_hours * 100, 1)
+                    : null,
+            ])
+            ->values();
+
         return Inertia::render('projects/Report', [
-            'project' => $project->only('id', 'name'),
-            'br'      => [
+            'project'          => $project->only('id', 'name'),
+            'velocity_history' => $velocityHistory,
+            'br'               => [
                 'total'      => $brTotal,
                 'by_status'  => $brStatusCounts,
                 'coverage'   => $brCoverage,

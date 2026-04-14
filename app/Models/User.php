@@ -20,6 +20,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'role_id',
+        'organization_id',
         'is_active',
     ];
 
@@ -35,6 +36,11 @@ class User extends Authenticatable implements MustVerifyEmail
             'password'          => 'hashed',
             'is_active'         => 'boolean',
         ];
+    }
+
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
     }
 
     public function role(): BelongsTo
@@ -53,16 +59,36 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * True when this user is the owner of their organisation.
+     * Org owners have full access within their org's projects.
+     */
+    public function isOrgOwner(): bool
+    {
+        $org = $this->relationLoaded('organization') ? $this->organization : $this->organization()->first();
+        return $org && $org->owner_id === $this->id;
+    }
+
+    /**
      * Check whether the user has a given permission, optionally scoped to a project.
      *
-     * When a project is supplied the user must be a project member; their
-     * project-level role override (if any) takes precedence over their global role.
-     * Admin always bypasses all checks.
+     * Bypass order:
+     *  1. System admin — global bypass
+     *  2. Org owner   — bypass for any project that belongs to their org
+     *  3. Role-based check (project-level override takes precedence over global role)
      */
     public function hasPermission(string $key, ?Project $project = null): bool
     {
         if ($this->isAdmin()) {
             return true;
+        }
+
+        if ($project !== null && $this->isOrgOwner()) {
+            $orgId = $this->relationLoaded('organization')
+                ? $this->organization?->id
+                : $this->organization()->value('id');
+            if ($project->organization_id === $orgId) {
+                return true;
+            }
         }
 
         $role = $project !== null ? $this->effectiveRole($project) : $this->role;

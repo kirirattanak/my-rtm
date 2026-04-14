@@ -23,25 +23,50 @@ class TaskController extends Controller
     {
         $this->authorize('viewAny', [Task::class, $project]);
 
-        $tasks = $project->tasks()
-            ->with(['assignee:id,name', 'sprint:id,name'])
-            ->when($request->search, fn ($q, $v) => $q->where('title', 'like', "%{$v}%"))
-            ->when($request->status, fn ($q, $v) => $q->where('status', $v))
-            ->when($request->sprint_id, fn ($q, $v) => $v === 'none' ? $q->whereNull('sprint_id') : $q->where('sprint_id', $v))
-            ->orderByRaw("CASE status WHEN 'done' THEN 1 WHEN 'cancelled' THEN 2 ELSE 0 END")
-            ->orderBy('due_date')
-            ->paginate(25)
-            ->through(fn ($t) => TaskResource::list($t));
-
+        $isBoard = $request->input('view') === 'board';
         $sprints = $project->sprints()->orderBy('start_date')->get(['id', 'name']);
+        $sprintFilter = $request->input('sprint_id');
+
+        if ($isBoard) {
+            // Board mode: all tasks sorted by priority (columns are the status grouping)
+            $boardTasks = $project->tasks()
+                ->with(['assignee:id,name', 'sprint:id,name'])
+                ->when($sprintFilter, fn ($q, $v) => $v === 'none' ? $q->whereNull('sprint_id') : $q->where('sprint_id', $v))
+                ->orderByRaw("CASE priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END")
+                ->get()
+                ->map(fn (Task $t) => TaskResource::list($t));
+
+            $members = $project->projectMembers()
+                ->with('user:id,name')
+                ->get()
+                ->map(fn ($m) => ['value' => $m->user_id, 'label' => $m->user->name]);
+
+            $tasks = null;
+        } else {
+            $tasks = $project->tasks()
+                ->with(['assignee:id,name', 'sprint:id,name'])
+                ->when($request->input('search'), fn ($q, $v) => $q->where('title', 'like', "%{$v}%"))
+                ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
+                ->when($sprintFilter, fn ($q, $v) => $v === 'none' ? $q->whereNull('sprint_id') : $q->where('sprint_id', $v))
+                ->orderByRaw("CASE status WHEN 'done' THEN 1 WHEN 'cancelled' THEN 2 ELSE 0 END")
+                ->orderBy('due_date')
+                ->paginate(25)
+                ->through(fn (Task $t) => TaskResource::list($t));
+
+            $boardTasks = [];
+            $members    = [];
+        }
 
         return Inertia::render('projects/tasks/Index', [
-            'project' => $project->only('id', 'name'),
-            'tasks'   => $tasks,
-            'sprints' => $sprints->map(fn ($s) => ['value' => (string) $s->id, 'label' => $s->name]),
-            'filters' => $request->only('search', 'status', 'sprint_id'),
-            'can'     => [
-                'create' => $request->user()->can('create', [Task::class, $project]),
+            'project'    => $project->only('id', 'name'),
+            'tasks'      => $tasks,
+            'boardTasks' => $boardTasks,
+            'members'    => $members,
+            'sprints'    => $sprints->map(fn ($s) => ['value' => (string) $s->id, 'label' => $s->name]),
+            'filters'    => $request->only('search', 'status', 'sprint_id'),
+            'can'        => [
+                'create'        => $request->user()->can('create', [Task::class, $project]),
+                'change_status' => $request->user()->hasPermission('tasks.change_status', $project),
             ],
         ]);
     }

@@ -11,6 +11,7 @@ class Invitation extends Model
         'email',
         'role',
         'token',
+        'organization_id',
         'invited_by',
         'accepted_at',
         'expires_at',
@@ -27,6 +28,11 @@ class Invitation extends Model
     public function inviter(): BelongsTo
     {
         return $this->belongsTo(User::class, 'invited_by');
+    }
+
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
     }
 
     public function isPending(): bool

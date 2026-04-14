@@ -9,22 +9,24 @@ class BusinessRequirementResource
     public static function list(BusinessRequirement $br): array
     {
         return [
-            'id'             => $br->id,
-            'ref'            => $br->ref,
-            'number'         => $br->number,
-            'title'          => $br->title,
-            'priority'       => $br->priority->value,
-            'priority_label' => $br->priority->label(),
-            'priority_color' => $br->priority->color(),
-            'status'         => $br->status->value,
-            'status_label'   => $br->status->label(),
-            'status_color'   => $br->status->color(),
-            'category'       => $br->category,
-            'creator'        => $br->creator,
-            'tr_count'       => $br->technical_requirements_count,
-            'blocking_count' => $br->blocking_count ?? 0,
-            'is_blocked'     => (bool) ($br->is_blocked ?? false),
-            'created_at'     => $br->created_at,
+            'id'              => $br->id,
+            'ref'             => $br->ref,
+            'number'          => $br->number,
+            'title'           => $br->title,
+            'priority'        => $br->priority->value,
+            'priority_label'  => $br->priority->label(),
+            'priority_color'  => $br->priority->color(),
+            'status'          => $br->status->value,
+            'status_label'    => $br->status->label(),
+            'status_color'    => $br->status->color(),
+            'category'        => $br->category,
+            'creator'         => $br->creator,
+            'tr_count'        => $br->technical_requirements_count,
+            'blocking_count'  => $br->blocking_count ?? 0,
+            'is_blocked'      => (bool) ($br->is_blocked ?? false),
+            'created_at'      => $br->created_at,
+            'pert_expected'   => $br->pertExpected(),
+            'has_pert'        => $br->hasPertEstimate(),
         ];
     }
 
@@ -56,7 +58,13 @@ class BusinessRequirementResource
             'blocks' => $br->relationLoaded('blockingBrs')
                 ? $br->blockingBrs->map(fn ($b) => self::dependencyItem($b))
                 : [],
-            'is_blocked' => $br->is_blocked,
+            'is_blocked'        => $br->is_blocked,
+            'optimistic_hours'  => $br->optimistic_hours,
+            'most_likely_hours' => $br->most_likely_hours,
+            'pessimistic_hours' => $br->pessimistic_hours,
+            'pert_expected'     => $br->pertExpected(),
+            'pert_std_dev'      => $br->pertStdDev(),
+            'has_pert'          => $br->hasPertEstimate(),
             'comments' => $br->comments->map(fn ($c) => [
                 'id'         => $c->id,
                 'body'       => $c->body,

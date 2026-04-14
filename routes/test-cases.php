@@ -18,6 +18,7 @@ Route::middleware(['auth', 'verified'])->prefix('projects/{project}')->name('pro
         Route::get('/{testCase}',          [TestCaseController::class, 'show'])->name('show');
         Route::get('/{testCase}/edit',     [TestCaseController::class, 'edit'])->name('edit');
         Route::patch('/{testCase}',        [TestCaseController::class, 'update'])->name('update');
+        Route::patch('/{testCase}/status', [TestCaseController::class, 'updateStatus'])->name('status.update');
         Route::delete('/{testCase}',       [TestCaseController::class, 'destroy'])->name('destroy');
 
         // Test runs

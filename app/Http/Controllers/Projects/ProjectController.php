@@ -10,7 +10,6 @@ use App\Models\Project;
 use App\Models\Role;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,7 +20,16 @@ class ProjectController extends Controller
         $user = $request->user();
 
         $projects = Project::with('owner')
-            ->when(! $user->isAdmin(), fn ($q) => $q->whereHas('projectMembers', fn ($q) => $q->where('user_id', $user->id)))
+            ->when($user->isAdmin(), fn ($q) => $q,                                   // admin sees all (read-only oversight)
+                fn ($q) => $q->where(function ($q) use ($user) {
+                    // Members see projects they belong to
+                    $q->whereHas('projectMembers', fn ($q) => $q->where('user_id', $user->id));
+                    // Org owners also see all projects in their organisation
+                    if ($user->isOrgOwner()) {
+                        $q->orWhere('organization_id', $user->organization_id);
+                    }
+                })
+            )
             ->withCount('projectMembers')
             ->orderBy('name')
             ->paginate(20)
@@ -53,7 +61,8 @@ class ProjectController extends Controller
 
         $project = Project::create([
             ...$data,
-            'owner_id' => $request->user()->id,
+            'owner_id'        => $request->user()->id,
+            'organization_id' => $request->user()->organization_id,
         ]);
 
         // Owner is automatically added as a Project Manager member

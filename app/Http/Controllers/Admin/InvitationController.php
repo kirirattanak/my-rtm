@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\InvitationStoreRequest;
 use App\Models\Invitation;
+use App\Models\Organization;
 use App\Models\Role;
 use App\Models\User;
 use App\Notifications\InvitationNotification;
@@ -16,46 +18,55 @@ use Inertia\Response;
 
 class InvitationController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $this->authorize('invite', User::class);
 
-        $invitations = Invitation::with('inviter')
+        $user = $request->user();
+
+        $invitations = Invitation::with(['inviter', 'organization'])
+            ->when(! $user->isAdmin(), fn ($q) => $q->where('organization_id', $user->organization_id))
             ->orderByDesc('created_at')
             ->get()
             ->map(fn (Invitation $inv) => [
-                'id'         => $inv->id,
-                'email'      => $inv->email,
-                'role'       => $inv->role,
-                'invited_by' => $inv->inviter->name,
-                'status'     => $inv->isAccepted() ? 'accepted' : ($inv->isExpired() ? 'expired' : 'pending'),
-                'expires_at' => $inv->expires_at->toDateString(),
-                'created_at' => $inv->created_at->toDateString(),
+                'id'           => $inv->id,
+                'email'        => $inv->email,
+                'role'         => $inv->role,
+                'organization' => $inv->organization?->name,
+                'invited_by'   => $inv->inviter->name,
+                'status'       => $inv->isAccepted() ? 'accepted' : ($inv->isExpired() ? 'expired' : 'pending'),
+                'expires_at'   => $inv->expires_at->toDateString(),
+                'created_at'   => $inv->created_at->toDateString(),
             ]);
 
-        $roles = Role::orderBy('name')->get(['id', 'name', 'slug', 'is_system']);
-
         return Inertia::render('admin/Invitations', [
-            'invitations' => $invitations,
-            'roles'       => $roles,
+            'invitations'   => $invitations,
+            'roles'         => Role::orderBy('name')->get(['id', 'name', 'slug', 'is_system']),
+            'organizations' => $user->isAdmin()
+                ? Organization::where('is_active', true)->orderBy('name')->get(['id', 'name'])
+                : [],
+            'is_admin'      => $user->isAdmin(),
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(InvitationStoreRequest $request): RedirectResponse
     {
         $this->authorize('invite', User::class);
 
-        $request->validate([
-            'email' => ['required', 'email', 'unique:users,email', 'unique:invitations,email'],
-            'role'  => ['required', 'string', 'exists:roles,slug'],
-        ]);
+        $user = $request->user();
+        $data = $request->validated();
+
+        $organizationId = $user->isAdmin()
+            ? ($data['organization_id'] ?? null)
+            : $user->organization_id;
 
         $invitation = Invitation::create([
-            'email'      => $request->email,
-            'role'       => $request->role,
-            'token'      => Str::random(40),
-            'invited_by' => $request->user()->id,
-            'expires_at' => now()->addDays(7),
+            'email'           => $data['email'],
+            'role'            => $data['role'],
+            'token'           => Str::random(40),
+            'organization_id' => $organizationId,
+            'invited_by'      => $user->id,
+            'expires_at'      => now()->addDays(7),
         ]);
 
         Notification::route('mail', $invitation->email)
@@ -64,9 +75,16 @@ class InvitationController extends Controller
         return back()->with('success', "Invitation sent to {$invitation->email}.");
     }
 
-    public function destroy(Invitation $invitation): RedirectResponse
+    public function destroy(Request $request, Invitation $invitation): RedirectResponse
     {
         $this->authorize('invite', User::class);
+
+        $user = $request->user();
+
+        // Org owners can only revoke invitations from their own org
+        if (! $user->isAdmin() && $invitation->organization_id !== $user->organization_id) {
+            abort(403);
+        }
 
         $invitation->delete();
 

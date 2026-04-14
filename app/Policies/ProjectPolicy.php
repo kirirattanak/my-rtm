@@ -7,18 +7,24 @@ use App\Models\User;
 
 class ProjectPolicy
 {
-    public function viewAny(User $user): bool
+    public function viewAny(User $_user): bool
     {
         return true;
     }
 
     public function view(User $user, Project $project): bool
     {
-        return $user->isAdmin() || $project->hasMember($user);
+        if ($user->isAdmin()) return true;
+        if ($user->isOrgOwner() && $user->organization_id === $project->organization_id) return true;
+        return $project->hasMember($user);
     }
 
     public function create(User $user): bool
     {
+        // Admin has no organisation and cannot own projects
+        if ($user->isAdmin()) {
+            return false;
+        }
         return $user->hasPermission('projects.create');
     }
 
@@ -29,7 +35,8 @@ class ProjectPolicy
 
     public function delete(User $user, Project $project): bool
     {
-        return $user->isAdmin();
+        // Only org owners (of the project's org) can delete projects; admin cannot
+        return $user->isOrgOwner() && $user->organization_id === $project->organization_id;
     }
 
     public function manageMembers(User $user, Project $project): bool

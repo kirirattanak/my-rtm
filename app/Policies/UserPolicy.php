@@ -30,6 +30,6 @@ class UserPolicy
 
     public function invite(User $user): bool
     {
-        return $user->isAdmin();
+        return $user->isAdmin() || $user->isOrgOwner();
     }
 }

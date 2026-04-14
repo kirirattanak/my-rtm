@@ -3,12 +3,11 @@
 namespace App\Http\Controllers\Projects;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Projects\BrDependencyRequest;
 use App\Models\BusinessRequirement;
 use App\Models\Project;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 class BrDependencyController extends Controller
 {
@@ -17,17 +16,11 @@ class BrDependencyController extends Controller
      * POST payload: { blocking_br_id: number }
      * Semantics: blocking_br_id must be resolved before $br can proceed.
      */
-    public function store(Request $request, Project $project, BusinessRequirement $businessRequirement): RedirectResponse
+    public function store(BrDependencyRequest $request, Project $project, BusinessRequirement $businessRequirement): RedirectResponse
     {
         $this->authorize('update', $businessRequirement);
 
-        $data = $request->validate([
-            'blocking_br_id' => [
-                'required',
-                'integer',
-                Rule::exists('business_requirements', 'id')->where('project_id', $project->id),
-            ],
-        ]);
+        $data = $request->validated();
 
         $blockingId = (int) $data['blocking_br_id'];
         $blockedId  = $businessRequirement->id;

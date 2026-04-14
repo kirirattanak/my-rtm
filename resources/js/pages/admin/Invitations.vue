@@ -1,14 +1,20 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { type BreadcrumbItem } from '@/types';  
+import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
 
-type InvitationRow = { id: number; email: string; role: string; invited_by: string; status: string; expires_at: string; created_at: string };
+type InvitationRow = {
+    id: number; email: string; role: string; organization: string | null;
+    invited_by: string; status: string; expires_at: string; created_at: string;
+};
 type RoleOption = { id: number; name: string; slug: string; is_system: boolean };
+type OrgOption  = { id: number; name: string };
 
-defineProps<{
+const props = defineProps<{
     invitations: InvitationRow[];
     roles: RoleOption[];
+    organizations: OrgOption[];
+    is_admin: boolean;
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -17,8 +23,9 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const form = useForm({
-    email: '',
-    role: 'viewer',
+    email:           '',
+    role:            'viewer',
+    organization_id: null as number | null,
 });
 
 function send() {
@@ -57,20 +64,31 @@ const statusClass: Record<string, string> = {
             <!-- Send invitation form -->
             <div class="bg-white border border-slate-200 rounded-xl p-5">
                 <h2 class="text-sm font-semibold text-slate-800 mb-4">Send Invitation</h2>
-                <form @submit.prevent="send" class="flex items-end gap-3">
-                    <div class="flex-1">
+                <form @submit.prevent="send" class="flex items-end gap-3 flex-wrap">
+                    <div class="flex-1 min-w-48">
                         <label class="block text-xs font-medium text-slate-600 mb-1">Email address</label>
                         <input v-model="form.email" type="email" required placeholder="colleague@example.com"
                             class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                             :class="{ 'border-red-400': form.errors.email }" />
                         <p v-if="form.errors.email" class="text-xs text-red-500 mt-1">{{ form.errors.email }}</p>
                     </div>
-                    <div class="w-48">
+                    <div class="w-44">
                         <label class="block text-xs font-medium text-slate-600 mb-1">Role</label>
                         <select v-model="form.role"
                             class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/50">
                             <option v-for="r in roles" :key="r.slug" :value="r.slug">{{ r.name }}</option>
                         </select>
+                    </div>
+                    <!-- Organisation picker — admins only -->
+                    <div v-if="is_admin" class="w-52">
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Organisation</label>
+                        <select v-model="form.organization_id"
+                            class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            :class="{ 'border-red-400': form.errors.organization_id }">
+                            <option :value="null">— none —</option>
+                            <option v-for="o in organizations" :key="o.id" :value="o.id">{{ o.name }}</option>
+                        </select>
+                        <p v-if="form.errors.organization_id" class="text-xs text-red-500 mt-1">{{ form.errors.organization_id }}</p>
                     </div>
                     <button type="submit" :disabled="form.processing"
                         class="bg-primary text-primary-foreground text-sm font-medium px-4 py-2 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50">
@@ -85,7 +103,8 @@ const statusClass: Record<string, string> = {
                     <thead>
                         <tr class="border-b border-slate-200 bg-slate-50">
                             <th class="text-left px-4 py-3 text-xs font-medium text-slate-500">Email</th>
-                            <th class="text-left px-4 py-3 text-xs font-medium text-slate-500 w-40">Role</th>
+                            <th class="text-left px-4 py-3 text-xs font-medium text-slate-500 w-36">Role</th>
+                            <th v-if="is_admin" class="text-left px-4 py-3 text-xs font-medium text-slate-500 w-40">Organisation</th>
                             <th class="text-left px-4 py-3 text-xs font-medium text-slate-500 w-32">Invited by</th>
                             <th class="text-left px-4 py-3 text-xs font-medium text-slate-500 w-24">Status</th>
                             <th class="text-left px-4 py-3 text-xs font-medium text-slate-500 w-28">Expires</th>
@@ -94,12 +113,13 @@ const statusClass: Record<string, string> = {
                     </thead>
                     <tbody>
                         <tr v-if="invitations.length === 0">
-                            <td colspan="6" class="px-4 py-8 text-center text-sm text-slate-400">No invitations yet.</td>
+                            <td :colspan="is_admin ? 7 : 6" class="px-4 py-8 text-center text-sm text-slate-400">No invitations yet.</td>
                         </tr>
                         <tr v-for="inv in invitations" :key="inv.id"
                             class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                             <td class="px-4 py-3 text-slate-700">{{ inv.email }}</td>
                             <td class="px-4 py-3 text-slate-600">{{ roles.find(r => r.slug === inv.role)?.name ?? inv.role }}</td>
+                            <td v-if="is_admin" class="px-4 py-3 text-slate-500 text-xs">{{ inv.organization ?? '—' }}</td>
                             <td class="px-4 py-3 text-slate-600">{{ inv.invited_by }}</td>
                             <td class="px-4 py-3">
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize"

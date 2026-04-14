@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Projects\MemberCapacityController;
+use App\Http\Controllers\Projects\SprintBusinessRequirementController;
 use App\Http\Controllers\Projects\SprintController;
 use App\Http\Controllers\Projects\TaskController;
 use App\Http\Controllers\Projects\TaskLogController;
@@ -16,7 +18,16 @@ Route::middleware(['auth', 'verified'])->prefix('projects/{project}')->name('pro
         Route::get('/{sprint}/edit', [SprintController::class, 'edit'])->name('edit');
         Route::patch('/{sprint}',    [SprintController::class, 'update'])->name('update');
         Route::delete('/{sprint}',   [SprintController::class, 'destroy'])->name('destroy');
+        Route::post('/{sprint}/close', [SprintController::class, 'close'])->name('close');
+
+        // Sprint BR planning
+        Route::post('/{sprint}/brs',             [SprintBusinessRequirementController::class, 'store'])->name('brs.store');
+        Route::delete('/{sprint}/brs/{businessRequirement}', [SprintBusinessRequirementController::class, 'destroy'])->name('brs.destroy');
     });
+
+    // Member monthly capacity
+    Route::put('members/capacity', [MemberCapacityController::class, 'upsert'])->name('members.capacity.upsert');
+    Route::get('members/capacity', [MemberCapacityController::class, 'index'])->name('members.capacity.index');
 
     // Tasks
     Route::prefix('tasks')->name('tasks.')->group(function () {

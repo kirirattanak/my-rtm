@@ -25,6 +25,9 @@ class BusinessRequirement extends Model
         'category',
         'tags',
         'created_by',
+        'optimistic_hours',
+        'most_likely_hours',
+        'pessimistic_hours',
     ];
 
     protected $casts = [
@@ -76,6 +79,49 @@ class BusinessRequirement extends Model
     {
         return $this->morphMany(ActivityLog::class, 'subject')->latest();
     }
+
+    public function sprints(): BelongsToMany
+    {
+        return $this->belongsToMany(Sprint::class, 'sprint_business_requirements')
+            ->withPivot('added_by')
+            ->withTimestamps();
+    }
+
+    // ── PERT helpers ────────────────────────────────────────────────────────
+
+    public function hasPertEstimate(): bool
+    {
+        return $this->optimistic_hours !== null
+            && $this->most_likely_hours !== null
+            && $this->pessimistic_hours !== null;
+    }
+
+    public function pertExpected(): ?float
+    {
+        if (! $this->hasPertEstimate()) {
+            return null;
+        }
+
+        return ($this->optimistic_hours + 4 * $this->most_likely_hours + $this->pessimistic_hours) / 6;
+    }
+
+    public function pertVariance(): ?float
+    {
+        if (! $this->hasPertEstimate()) {
+            return null;
+        }
+
+        return (($this->pessimistic_hours - $this->optimistic_hours) / 6) ** 2;
+    }
+
+    public function pertStdDev(): ?float
+    {
+        $variance = $this->pertVariance();
+
+        return $variance !== null ? sqrt($variance) : null;
+    }
+
+    // ── Accessors ────────────────────────────────────────────────────────────
 
     public function getRefAttribute(): string
     {

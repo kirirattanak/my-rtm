@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\RoleRequest;
 use App\Models\Role;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,13 +34,11 @@ class RoleController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(RoleRequest $request): RedirectResponse
     {
         $this->authorize('viewAny', \App\Models\User::class);
 
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:roles,name'],
-        ]);
+        $data = $request->validated();
 
         Role::create([
             'name'       => $data['name'],
@@ -51,7 +50,7 @@ class RoleController extends Controller
         return back()->with('success', "Role \"{$data['name']}\" created.");
     }
 
-    public function update(Request $request, Role $role): RedirectResponse
+    public function update(RoleRequest $request, Role $role): RedirectResponse
     {
         $this->authorize('viewAny', \App\Models\User::class);
 
@@ -59,9 +58,7 @@ class RoleController extends Controller
             return back()->with('error', 'System roles cannot be renamed.');
         }
 
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255', "unique:roles,name,{$role->id}"],
-        ]);
+        $data = $request->validated();
 
         $role->update([
             'name' => $data['name'],

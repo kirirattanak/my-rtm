@@ -9,16 +9,26 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Role extends Model
 {
-    protected $fillable = ['name', 'slug', 'is_system', 'created_by'];
+    protected $fillable = ['name', 'slug', 'is_system', 'organization_id', 'created_by'];
 
     protected function casts(): array
     {
         return ['is_system' => 'boolean'];
     }
 
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function isOrgScoped(): bool
+    {
+        return $this->organization_id !== null;
     }
 
     public function permissions(): BelongsToMany

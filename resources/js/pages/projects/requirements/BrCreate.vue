@@ -3,7 +3,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import RichEditor from '@/components/RichEditor.vue';
 import { type BreadcrumbItem, type SelectOption } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 const props = defineProps<{
     project: { id: number; name: string };
@@ -25,9 +25,22 @@ const form = useForm({
     status: 'draft',
     category: '',
     tags: [] as string[],
+    optimistic_hours: null as number | null,
+    most_likely_hours: null as number | null,
+    pessimistic_hours: null as number | null,
 });
 
 const tagInput = ref('');
+const showPert = ref(false);
+
+const pertExpected = computed(() => {
+    const o = Number(form.optimistic_hours);
+    const m = Number(form.most_likely_hours);
+    const p = Number(form.pessimistic_hours);
+    if (!form.optimistic_hours && !form.most_likely_hours && !form.pessimistic_hours) return null;
+    if (isNaN(o) || isNaN(m) || isNaN(p)) return null;
+    return ((o + 4 * m + p) / 6).toFixed(1);
+});
 
 function addTag() {
     const tag = tagInput.value.trim();
@@ -121,6 +134,50 @@ function submit() {
                             @keydown.enter.prevent="addTag"
                         />
                         <button type="button" @click="addTag" class="px-3 py-2 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50">Add</button>
+                    </div>
+                </div>
+
+                <!-- PERT Estimates -->
+                <div class="border border-slate-200 rounded-lg overflow-hidden">
+                    <button
+                        type="button"
+                        class="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 transition"
+                        @click="showPert = !showPert"
+                    >
+                        <span>Effort Estimate (PERT)</span>
+                        <span class="flex items-center gap-2">
+                            <span v-if="pertExpected" class="text-xs font-normal text-primary">Expected: {{ pertExpected }} h</span>
+                            <svg class="w-4 h-4 text-slate-400 transition-transform" :class="{ 'rotate-180': showPert }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                        </span>
+                    </button>
+                    <div v-if="showPert" class="px-4 py-4 space-y-4">
+                        <p class="text-xs text-slate-500">Provide three hour estimates. The PERT expected value (O + 4M + P) / 6 is used for sprint capacity planning.</p>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Optimistic (h)</label>
+                                <input v-model.number="form.optimistic_hours" type="number" min="0" step="0.5"
+                                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                                    placeholder="e.g. 4" />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Most Likely (h)</label>
+                                <input v-model.number="form.most_likely_hours" type="number" min="0" step="0.5"
+                                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                                    placeholder="e.g. 8" />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Pessimistic (h)</label>
+                                <input v-model.number="form.pessimistic_hours" type="number" min="0" step="0.5"
+                                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                                    placeholder="e.g. 16" />
+                            </div>
+                        </div>
+                        <div v-if="pertExpected" class="text-sm text-slate-600">
+                            Expected: <span class="font-semibold text-primary">{{ pertExpected }} h</span>
+                        </div>
+                        <p v-if="form.errors.optimistic_hours" class="text-xs text-red-500">{{ form.errors.optimistic_hours }}</p>
+                        <p v-if="form.errors.most_likely_hours" class="text-xs text-red-500">{{ form.errors.most_likely_hours }}</p>
+                        <p v-if="form.errors.pessimistic_hours" class="text-xs text-red-500">{{ form.errors.pessimistic_hours }}</p>
                     </div>
                 </div>
 

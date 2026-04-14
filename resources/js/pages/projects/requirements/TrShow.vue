@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
+import PriorityBadge from '@/components/PriorityBadge.vue';
 import { type BreadcrumbItem, type TechnicalRequirement } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 
@@ -37,12 +38,6 @@ const runBadge: Record<string, string> = {
     skipped: 'bg-slate-100 text-slate-500',
 };
 
-const priorityClass: Record<string, string> = {
-    critical: 'bg-red-100 text-red-700',
-    high:     'bg-orange-100 text-orange-700',
-    medium:   'bg-amber-100 text-amber-700',
-    low:      'bg-slate-100 text-slate-500',
-};
 
 const commentForm = useForm({ body: '' });
 
@@ -132,10 +127,7 @@ function confirmDelete() {
                                 </Link>
                             </td>
                             <td class="px-5 py-3">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                                    :class="priorityClass[br.priority]">
-                                    {{ br.priority_label }}
-                                </span>
+                                <PriorityBadge :priority="br.priority" :label="br.priority_label" />
                             </td>
                             <td class="px-5 py-3">
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
@@ -186,10 +178,7 @@ function confirmDelete() {
                                 </Link>
                             </td>
                             <td class="px-5 py-3">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                                    :class="priorityClass[tc.priority]">
-                                    {{ tc.priority_label }}
-                                </span>
+                                <PriorityBadge :priority="tc.priority" :label="tc.priority_label" />
                             </td>
                             <td class="px-5 py-3">
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"

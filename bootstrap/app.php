@@ -20,6 +20,10 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
+
+        $middleware->alias([
+            'tier' => \App\Http\Middleware\CheckTierAccess::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // For non-GET Inertia requests (form submissions and mutations), redirect back
